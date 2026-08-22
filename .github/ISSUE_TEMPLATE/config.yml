@@ -1,0 +1,13 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Question or idea
+    url: https://github.com/mofane-work/pegboard/discussions
+    about: >
+      For open-ended questions, "is this possible", and showing off your wall.
+      Bugs and concrete feature requests are better as issues.
+  - name: Wrong price on IKEA's side
+    url: https://www.ikea.com
+    about: >
+      Prices here are a snapshot of IKEA's own search API and are indicative
+      only. Always check ikea.com before buying — that is not something this
+      project can fix.

@@ -1,0 +1,883 @@
+/* Layout and component styles. Every colour comes from tokens.css — no hex here. */
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.layout__main {
+  display: grid;
+  /* Middle pane is a share of the window, set from the top bar; the two side
+     panes split whatever is left.
+
+     Both halves of this line are load-bearing against horizontal overflow
+     (findings F30). The side minimums do not shrink, and the middle track is a
+     share of the VIEWPORT, so the row wants `150 + stage% + 240` however narrow
+     the window gets. At the old 180/280 the row could not fit under ~1022px and
+     the page scrolled sideways all the way down to the 900px stacking
+     breakpoint. Lowering the minimums clears that at the default 55%, but the
+     slider goes to 70%, where 370px of sides still would not fit until ~1233px
+     — so the middle track is `minmax(0, …)` as well, letting it yield the last
+     few pixels instead of pushing the cost pane off-screen. It only ever gives
+     way when the alternative is overflow; at every width with room, the slider
+     setting is honoured exactly. */
+  grid-template-columns:
+    minmax(150px, 1fr)
+    minmax(0, var(--stage-width, 55%))
+    minmax(240px, 1.15fr);
+  /* Height is a FLOOR, not a fixed size — `1fr` keeps the row filling whatever
+     is available, and --stage-height only ever raises it past the bottom of the
+     window. At its default the minimum is below the natural fill, so the layout
+     is byte-for-byte what it was before the control existed.
+
+     The floor has to live on flex-basis, NOT on the row alone. With `flex: 1`
+     (basis 0) this row was sized by its tallest CONTENT — the palette — which
+     is taller than the window at every setting the slider offers, so the floor
+     never bound and the control did nothing. Putting the control on the basis
+     makes the row's height come from the window and the slider instead, and
+     the panes below scroll inside it. Measured, not guessed: with a 3-, 30- and
+     80-item palette the row is now identical at each slider step. */
+  grid-template-rows: minmax(var(--stage-height, 40vh), 1fr);
+  flex: 1 1 var(--stage-height, 40vh);
+  min-height: 0;
+}
+
+.layout__stage {
+  position: relative;
+  min-height: 380px;
+  border-inline: 1px solid var(--color-border);
+}
+
+.layout__stage canvas {
+  display: block;
+  touch-action: none;
+  /* The only affordance a bare canvas has. Same idiom as `.palette__item`. */
+  cursor: grab;
+}
+
+.layout__stage canvas:active {
+  cursor: grabbing;
+}
+
+/* Says the picture is interactive, then gets out of the way for good once the
+   camera has moved. `pointer-events: none` is load-bearing — the stage under
+   it is the drop target for every accessory drag. */
+.orbit-hint {
+  position: absolute;
+  inset-block-end: var(--space-3);
+  inset-inline-start: var(--space-3);
+  margin: 0;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  opacity: 0.85;
+  pointer-events: none;
+  transition: opacity var(--transition);
+}
+
+.orbit-hint__glyph {
+  color: var(--color-accent);
+}
+
+.orbit-hint--gone {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbit-hint {
+    transition: none;
+  }
+}
+
+.layout__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-5);
+  padding: var(--space-3) var(--space-5);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.layout__disclaimer {
+  margin: 0;
+  /* The disclaimer is the reason the footer exists; it keeps the room. */
+  flex: 1 1 24rem;
+}
+
+/* The source link is always here; the coffee link only when one is configured,
+   so this has to read correctly with one child or two. */
+.layout__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* A link, not a button: this asks, it does not call to action. */
+.layout__support-link {
+  color: var(--color-text-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color var(--transition);
+}
+
+.layout__support-link:hover,
+.layout__support-link:focus-visible {
+  color: var(--color-accent);
+}
+
+/* ---- Toolbar ---- */
+
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+/* A toolbar row is two groups pushed to opposite ends: brand | page settings,
+   and boards | actions. `space-between` is what puts the right-hand group in
+   the corner, level with the h1 / the board pickers.
+
+   `flex-wrap` is what makes the narrow case behave. Each group is its own flex
+   container, so when the two stop fitting the whole right-hand group drops to
+   a line of its own rather than the buttons interleaving with the selects —
+   and a lone group on a wrapped line sits at flex-start, not pushed right. */
+.toolbar__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.toolbar__brand h1 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+}
+
+.toolbar__brand p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.toolbar__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: flex-end;
+}
+
+/* Caption above control. The same widget whether it sits in the top bar or in
+   the cost pane, so it is one rule rather than two copies. */
+.toolbar__controls label,
+.cost__source label,
+.cost__print label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* Select plus its orientation and remove buttons, kept on one line. */
+.toolbar__board {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-1);
+}
+
+/* Pressed state carries the only persistent signal that a panel is turned. */
+.toolbar__board button[aria-pressed='true'] {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.toolbar__rotated {
+  margin-left: var(--space-1);
+  font-style: normal;
+  color: var(--color-accent);
+}
+
+.toolbar__range {
+  width: 7rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  accent-color: var(--color-accent);
+}
+
+/* ---- Palette ---- */
+
+.palette {
+  padding: var(--space-4);
+  overflow-y: auto;
+  /* A grid item's automatic minimum is its content, which would make this pane
+     — the tallest thing in the row — set the stage height. `overflow-y: auto`
+     only actually scrolls once this is here. */
+  min-height: 0;
+  background: var(--color-surface);
+}
+
+.palette h2,
+.palette h3 {
+  margin: 0 0 var(--space-1);
+  font-size: var(--font-size-md);
+}
+
+.palette h3 {
+  margin-top: var(--space-5);
+}
+
+.palette__hint {
+  margin: 0 0 var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.palette__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.palette__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  text-align: start;
+  cursor: grab;
+  touch-action: none;
+}
+
+.palette__item:active {
+  cursor: grabbing;
+  border-color: var(--color-accent);
+}
+
+.palette__name {
+  font-size: var(--font-size-sm);
+}
+
+.palette__dims {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.palette__extra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.palette__stepper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.palette__stepper button {
+  width: 1.9rem;
+  padding: 0;
+  line-height: 1.6;
+}
+
+.palette__stepper output {
+  min-width: 1.5ch;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Cost table ---- */
+
+.cost {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  overflow-y: auto;
+  /* Same reason as .palette above. */
+  min-height: 0;
+  background: var(--color-surface);
+}
+
+.cost h2 {
+  margin: 0;
+  font-size: var(--font-size-md);
+}
+
+.cost__hint,
+.cost__status,
+.cost__empty {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.cost__status--warn {
+  color: var(--color-danger);
+}
+
+/* Five columns do not fit a 240px pane — the table's own minimum is ~260px, and
+   the editable price field is part of why. Scroll the TABLE rather than let it
+   push the whole pane sideways, which would drag the heading and the controls
+   out of view with it. Also keeps this honest in ja / zh-Hant, where the item
+   names are wider. */
+.cost__scroll {
+  overflow-x: auto;
+  /* `.cost` is a flex column, so this wrapper is a flex item and will happily
+     shrink below the table's height — and because `overflow-x: auto` makes
+     `overflow-y` compute to `auto` too, that shrinkage silently CLIPS rows
+     instead of showing them. Measured at 1440px: 80px of table hidden inside
+     the wrapper. Refusing to shrink hands the vertical scrolling back to
+     `.cost`, where it belongs. */
+  flex: 0 0 auto;
+}
+
+.cost__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.cost__table th,
+.cost__table td {
+  padding: var(--space-2) var(--space-1);
+  border-bottom: 1px solid var(--color-border);
+  text-align: start;
+  vertical-align: top;
+}
+
+.cost__table th {
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.cost__num {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.cost__row--excluded {
+  opacity: 0.45;
+}
+
+.cost__name {
+  display: block;
+}
+
+.cost__pack {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.cost__price,
+.cost__reset {
+  padding: 2px var(--space-1);
+  border: 1px solid transparent;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.cost__price:hover,
+.cost__reset:hover {
+  border-color: var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.cost__reset {
+  display: block;
+  color: var(--color-accent);
+  font-size: 0.7rem;
+}
+
+.cost__badge {
+  display: block;
+  color: var(--color-accent);
+  font-size: 0.7rem;
+}
+
+/* Same border-box trap as .cost__currency: the shared control padding has to be
+   added back or a four-figure price does not fit. Tighter side padding than the
+   shared rule because this one lives in a table cell that has 240px to give.
+   The number spinners go too — they cost ~15px of the box to step a price by a
+   penny, which nobody wants. */
+.cost__input {
+  width: calc(7ch + var(--space-2) * 2 + 2px);
+  padding-inline: var(--space-2);
+  appearance: textfield;
+}
+
+.cost__input::-webkit-outer-spin-button,
+.cost__input::-webkit-inner-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.cost__footer {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-top: var(--space-2);
+  border-top: 2px solid var(--color-border);
+  font-size: var(--font-size-lg);
+}
+
+/* ---- Shared controls ---- */
+
+select,
+input,
+button {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  transition: border-color var(--transition), background var(--transition);
+}
+
+button {
+  cursor: pointer;
+}
+
+button:hover,
+select:hover {
+  border-color: var(--color-accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Stack the three panes once there is no room for side-by-side. */
+@media (max-width: 900px) {
+  .layout__main {
+    grid-template-columns: 1fr;
+    /* Stacked, the three panes each own a row and the PAGE scrolls — so the
+       row must go back to being content-sized. The desktop flex-basis floor
+       would instead squeeze all three into one screen. */
+    flex: 1 1 auto;
+  }
+
+  .palette,
+  .cost {
+    min-height: auto;
+  }
+
+  .layout__stage {
+    order: -1;
+    /* Stacked, the stage owns a row of its own, so the control applies
+       directly. 60vh stays the floor: that is what this layout shipped with,
+       and dropping below it would leave the board unusably small on a phone. */
+    min-height: max(60vh, var(--stage-height, 60vh));
+    border-inline: 0;
+    border-block: 1px solid var(--color-border);
+  }
+}
+
+/* ---- Help dialog ---- */
+
+.help {
+  max-width: 46rem;
+  max-height: 85vh;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.help::backdrop {
+  background: rgb(0 0 0 / 45%);
+}
+
+.help__body {
+  padding: var(--space-5);
+}
+
+.help__body h2 {
+  margin: 0 0 var(--space-4);
+  font-size: var(--font-size-xl);
+}
+
+.help__body h3 {
+  margin: var(--space-5) 0 var(--space-2);
+  font-size: var(--font-size-md);
+  color: var(--color-accent);
+}
+
+.help__body ul {
+  margin: 0;
+  padding-inline-start: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+/*
+ * The analytics opt-out. Deliberately a plain checkbox sitting inside the
+ * privacy list rather than a toggle in the toolbar: the exemption it satisfies
+ * requires the refusal to be as easy to find as the statement it refuses, and
+ * the statement is here.
+ */
+.help__optout {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  margin-inline-start: var(--space-5);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.help__optout input {
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+.help__disclaimer {
+  margin: var(--space-5) 0 var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.help__close {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+/* Two rows of controls inside the cost pane: where the prices come from, and
+   how the build sheet is drawn. Both sit next to the thing they act on.
+   Vertical rhythm comes from `.cost`'s own column gap, not from margins. */
+.cost__source,
+.cost__print {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: flex-end;
+}
+
+/* Follows the procurement-list textarea, so it needs the same breathing room
+   `.export` takes above itself. */
+.cost__print {
+  margin-top: var(--space-4);
+}
+
+/* Wide enough for the 5 characters maxLength allows, in capitals. `width` is
+   border-box here, so the shared control padding has to be added back or the
+   box ends up with room for barely three characters. */
+.cost__currency {
+  width: calc(5.5ch + var(--space-3) * 2 + 2px);
+  text-transform: uppercase;
+}
+
+/* The one control that reaches the network, so it looks like a quiet option
+   rather than a call to action — the snapshot is the expected source. */
+.cost__refresh-button {
+  font-size: var(--font-size-sm);
+}
+
+.cost__refresh-button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+/* ---- Procurement list export ---- */
+
+.export {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.export h2 {
+  margin: 0;
+  font-size: var(--font-size-md);
+}
+
+.export__hint {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.export__controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.export__formats {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.export__format {
+  padding: var(--space-1) var(--space-3);
+  font-size: 0.75rem;
+}
+
+.export__format--on {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.export__copy {
+  padding: var(--space-1) var(--space-4);
+  font-size: 0.75rem;
+}
+
+.export__text {
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+  color: var(--color-text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  white-space: pre;
+  overflow-x: auto;
+  resize: vertical;
+}
+
+/* ---- Printable sheet ----
+   Hidden on screen; on paper it is the only thing that prints. */
+
+.sheet {
+  display: none;
+}
+
+@media print {
+  .toolbar,
+  .palette,
+  .layout__stage,
+  .layout__footer,
+  .cost__table,
+  .cost__scroll,
+  .cost__footer,
+  .cost__hint,
+  .cost__status,
+  .cost__empty,
+  .cost__source,
+  .cost__print,
+  .export,
+  .help {
+    display: none !important;
+  }
+
+  .layout,
+  .layout__main,
+  .cost {
+    display: block;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: #fff;
+    color: #000;
+  }
+
+  .cost h2 {
+    display: none;
+  }
+
+  .sheet {
+    display: block;
+    padding: 0;
+    color: #000;
+  }
+
+  .sheet__header h1 {
+    margin: 0 0 2mm;
+    font-size: 14pt;
+  }
+
+  .sheet__header p {
+    margin: 0 0 4mm;
+    font-size: 10pt;
+  }
+
+  .sheet__diagram {
+    display: block;
+    width: 100%;
+    max-height: 110mm;
+    margin-bottom: 5mm;
+  }
+
+  .sheet__board {
+    fill: none;
+    stroke: #000;
+    stroke-width: 3;
+  }
+
+  .sheet__slot {
+    fill: none;
+    stroke: #999;
+    stroke-width: 1;
+  }
+
+  .sheet__item {
+    fill: #000;
+    fill-opacity: 0.12;
+    stroke: #000;
+    stroke-width: 2;
+  }
+
+  .sheet__list {
+    margin: 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 8.5pt;
+    line-height: 1.45;
+    white-space: pre-wrap;
+  }
+
+  .sheet__note {
+    margin-top: 4mm;
+    font-size: 7.5pt;
+    color: #444;
+  }
+
+  @page {
+    margin: 12mm;
+  }
+}
+
+/* Custom component dialog — same platform-dialog approach as .help */
+.custom {
+  max-width: 34rem;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.custom::backdrop {
+  background: rgb(0 0 0 / 45%);
+}
+
+.custom__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+}
+
+.custom__body h2 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+}
+
+.custom__hint,
+.custom__preview {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.custom__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+}
+
+.custom__row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+}
+
+.custom__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.custom__save {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.custom__delete {
+  margin-inline-end: auto;
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.palette__custom-add {
+  width: 100%;
+  margin-top: var(--space-2);
+}
+
+.toolbar__note {
+  align-self: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.palette__custom-row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-2);
+}
+
+.palette__custom-row .palette__item {
+  flex: 1;
+}
+
+.palette__custom-edit {
+  flex: 0 0 auto;
+  font-size: var(--font-size-sm);
+}

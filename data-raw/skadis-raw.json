@@ -1,0 +1,2927 @@
+{
+  "capturedAt": "2026-08-18",
+  "markets": {
+    "us": {
+      "locale": "us/en",
+      "currency": "USD",
+      "skus": [
+        {
+          "id": "10321618",
+          "typeName": "Pegboard",
+          "price": 29.99,
+          "pipUrl": "https://www.ikea.com/us/en/p/skadis-pegboard-white-10321618/",
+          "itemMeasureReferenceText": "30x22 \"",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "20320798",
+          "typeName": "Container",
+          "price": 5.0,
+          "pipUrl": "https://www.ikea.com/us/en/p/skadis-container-white-20320798/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "20591841",
+          "typeName": "Display shelf",
+          "price": 7.0,
+          "pipUrl": "https://www.ikea.com/us/en/p/skadis-display-shelf-white-20591841/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "00320799",
+          "typeName": "Shelf",
+          "price": 5.0,
+          "pipUrl": "https://www.ikea.com/us/en/p/skadis-shelf-white-00320799/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "50335618",
+          "typeName": "Hook",
+          "price": 4.0,
+          "pipUrl": "https://www.ikea.com/us/en/p/skadis-hook-white-50335618/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "50517760",
+          "typeName": "Storage basket, set of 3",
+          "price": 11.0,
+          "pipUrl": "https://www.ikea.com/us/en/p/skadis-storage-basket-set-of-3-white-50517760/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "20320802",
+          "typeName": "Hook",
+          "price": 5.0,
+          "pipUrl": "https://www.ikea.com/us/en/p/skadis-hook-white-20320802/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "80335909",
+          "typeName": "Container with lid",
+          "price": 10.0,
+          "pipUrl": "https://www.ikea.com/us/en/p/skadis-container-with-lid-white-80335909/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "00321614",
+          "typeName": "Clip",
+          "price": 4.0,
+          "pipUrl": "https://www.ikea.com/us/en/p/skadis-clip-white-00321614/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "20519888",
+          "typeName": "Hook",
+          "price": 3.0,
+          "pipUrl": "https://www.ikea.com/us/en/p/skadis-hook-white-20519888/",
+          "itemMeasureReferenceText": "¾ \"",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "10320789",
+          "typeName": "Connector",
+          "price": 7.0,
+          "pipUrl": "https://www.ikea.com/us/en/p/skadis-connector-white-10320789/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "50320805",
+          "typeName": "Pegboard",
+          "price": 19.99,
+          "pipUrl": "https://www.ikea.com/us/en/p/skadis-pegboard-white-50320805/",
+          "itemMeasureReferenceText": "14 ¼x22 \"",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "20586420",
+          "typeName": "7-piece accessories set",
+          "price": 15.0,
+          "pipUrl": "https://www.ikea.com/us/en/p/skadis-7-piece-accessories-set-white-20586420/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "40519887",
+          "typeName": "Hook rack",
+          "price": 4.0,
+          "pipUrl": "https://www.ikea.com/us/en/p/skadis-hook-rack-white-40519887/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "40477646",
+          "typeName": "Connector for SKÅDIS pegboards",
+          "price": 3.0,
+          "pipUrl": "https://www.ikea.com/us/en/p/skadis-connector-for-skadis-pegboards-white-40477646/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "40321631",
+          "typeName": "Elastic cord",
+          "price": 3.0,
+          "pipUrl": "https://www.ikea.com/us/en/p/skadis-elastic-cord-gray-40321631/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "gray",
+              "id": "10028",
+              "hex": "949494"
+            }
+          ]
+        },
+        {
+          "id": "10599499",
+          "typeName": "Storage basket",
+          "price": 10.0,
+          "pipUrl": "https://www.ikea.com/us/en/p/skadis-storage-basket-gray-10599499/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "gray",
+              "id": "10028",
+              "hex": "949494"
+            }
+          ]
+        },
+        {
+          "id": "00320803",
+          "typeName": "Pegboard",
+          "price": 24.99,
+          "pipUrl": "https://www.ikea.com/us/en/p/skadis-pegboard-white-00320803/",
+          "itemMeasureReferenceText": "22x22 \"",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "00541574",
+          "typeName": "Free-standing peg board",
+          "price": 24.99,
+          "pipUrl": "https://www.ikea.com/us/en/p/skadis-free-standing-peg-board-white-00541574/",
+          "itemMeasureReferenceText": "22x14 ½ \"",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "20624417",
+          "typeName": "Pegboard",
+          "price": 24.99,
+          "pipUrl": "https://www.ikea.com/us/en/p/skadis-pegboard-double-sided-dark-gray-blue-dark-lilac-red-20624417/",
+          "itemMeasureReferenceText": "14 ¼x22 \"",
+          "colors": [
+            {
+              "name": "blue",
+              "id": "10007",
+              "hex": "0058a3"
+            },
+            {
+              "name": "gray",
+              "id": "10028",
+              "hex": "949494"
+            },
+            {
+              "name": "lilac",
+              "id": "10064",
+              "hex": "a96ecc"
+            }
+          ]
+        },
+        {
+          "id": "00624423",
+          "typeName": "Pegboard",
+          "price": 34.99,
+          "pipUrl": "https://www.ikea.com/us/en/p/skadis-pegboard-double-sided-dark-gray-blue-dark-lilac-red-00624423/",
+          "itemMeasureReferenceText": "30x22 \"",
+          "colors": [
+            {
+              "name": "blue",
+              "id": "10007",
+              "hex": "0058a3"
+            },
+            {
+              "name": "gray",
+              "id": "10028",
+              "hex": "949494"
+            },
+            {
+              "name": "lilac",
+              "id": "10064",
+              "hex": "a96ecc"
+            }
+          ]
+        },
+        {
+          "id": "10477643",
+          "typeName": "Connector for wardrobe",
+          "price": 4.0,
+          "pipUrl": "https://www.ikea.com/us/en/p/skadis-connector-for-wardrobe-white-10477643/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        }
+      ]
+    },
+    "gb": {
+      "locale": "gb/en",
+      "currency": "GBP",
+      "skus": [
+        {
+          "id": "10321618",
+          "typeName": "Pegboard",
+          "price": 15.0,
+          "pipUrl": "https://www.ikea.com/gb/en/p/skadis-pegboard-white-10321618/",
+          "itemMeasureReferenceText": "76x56 cm",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "20591841",
+          "typeName": "Display shelf",
+          "price": 3.0,
+          "pipUrl": "https://www.ikea.com/gb/en/p/skadis-display-shelf-white-20591841/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "20320798",
+          "typeName": "Container",
+          "price": 3.0,
+          "pipUrl": "https://www.ikea.com/gb/en/p/skadis-container-white-20320798/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "50335618",
+          "typeName": "Hook",
+          "price": 1.5,
+          "pipUrl": "https://www.ikea.com/gb/en/p/skadis-hook-white-50335618/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "00320799",
+          "typeName": "Shelf",
+          "price": 4.0,
+          "pipUrl": "https://www.ikea.com/gb/en/p/skadis-shelf-white-00320799/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "00624423",
+          "typeName": "Pegboard",
+          "price": 15.0,
+          "pipUrl": "https://www.ikea.com/gb/en/p/skadis-pegboard-double-sided-dark-grey-blue-dark-lilac-red-00624423/",
+          "itemMeasureReferenceText": "76x56 cm",
+          "colors": [
+            {
+              "name": "blue",
+              "id": "10007",
+              "hex": "0058a3"
+            },
+            {
+              "name": "grey",
+              "id": "10028",
+              "hex": "949494"
+            },
+            {
+              "name": "lilac",
+              "id": "10064",
+              "hex": "a96ecc"
+            }
+          ]
+        },
+        {
+          "id": "00321614",
+          "typeName": "Clip",
+          "price": 2.5,
+          "pipUrl": "https://www.ikea.com/gb/en/p/skadis-clip-white-00321614/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "50517760",
+          "typeName": "Storage basket, set of 3",
+          "price": 9.0,
+          "pipUrl": "https://www.ikea.com/gb/en/p/skadis-storage-basket-set-of-3-white-50517760/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "10320789",
+          "typeName": "Connector",
+          "price": 5.0,
+          "pipUrl": "https://www.ikea.com/gb/en/p/skadis-connector-white-10320789/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "80335909",
+          "typeName": "Container with lid",
+          "price": 9.0,
+          "pipUrl": "https://www.ikea.com/gb/en/p/skadis-container-with-lid-white-80335909/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "20519888",
+          "typeName": "Hook",
+          "price": 1.0,
+          "pipUrl": "https://www.ikea.com/gb/en/p/skadis-hook-white-20519888/",
+          "itemMeasureReferenceText": "19 mm",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "50320805",
+          "typeName": "Pegboard",
+          "price": 10.0,
+          "pipUrl": "https://www.ikea.com/gb/en/p/skadis-pegboard-white-50320805/",
+          "itemMeasureReferenceText": "36x56 cm",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "20320802",
+          "typeName": "Hook",
+          "price": 2.5,
+          "pipUrl": "https://www.ikea.com/gb/en/p/skadis-hook-white-20320802/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "00320803",
+          "typeName": "Pegboard",
+          "price": 13.0,
+          "pipUrl": "https://www.ikea.com/gb/en/p/skadis-pegboard-white-00320803/",
+          "itemMeasureReferenceText": "56x56 cm",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "40519887",
+          "typeName": "Hook rack",
+          "price": 2.0,
+          "pipUrl": "https://www.ikea.com/gb/en/p/skadis-hook-rack-white-40519887/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "20586420",
+          "typeName": "7-piece accessories set",
+          "price": 9.0,
+          "pipUrl": "https://www.ikea.com/gb/en/p/skadis-7-piece-accessories-set-white-20586420/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "40321631",
+          "typeName": "Elastic cord",
+          "price": 2.0,
+          "pipUrl": "https://www.ikea.com/gb/en/p/skadis-elastic-cord-grey-40321631/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "grey",
+              "id": "10028",
+              "hex": "949494"
+            }
+          ]
+        },
+        {
+          "id": "10599499",
+          "typeName": "Storage basket",
+          "price": 5.0,
+          "pipUrl": "https://www.ikea.com/gb/en/p/skadis-storage-basket-grey-10599499/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "grey",
+              "id": "10028",
+              "hex": "949494"
+            }
+          ]
+        },
+        {
+          "id": "00541574",
+          "typeName": "Freestanding peg board",
+          "price": 17.0,
+          "pipUrl": "https://www.ikea.com/gb/en/p/skadis-freestanding-peg-board-white-00541574/",
+          "itemMeasureReferenceText": "56x37 cm",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "50569933",
+          "typeName": "Hook",
+          "price": 2.0,
+          "pipUrl": "https://www.ikea.com/gb/en/p/skadis-hook-black-50569933/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "black",
+              "id": "10139",
+              "hex": "000000"
+            }
+          ]
+        },
+        {
+          "id": "10477643",
+          "typeName": "Connector for wardrobe",
+          "price": 3.0,
+          "pipUrl": "https://www.ikea.com/gb/en/p/skadis-connector-for-wardrobe-white-10477643/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "20624417",
+          "typeName": "Pegboard",
+          "price": 10.0,
+          "pipUrl": "https://www.ikea.com/gb/en/p/skadis-pegboard-double-sided-dark-grey-blue-dark-lilac-red-20624417/",
+          "itemMeasureReferenceText": "36x56 cm",
+          "colors": [
+            {
+              "name": "blue",
+              "id": "10007",
+              "hex": "0058a3"
+            },
+            {
+              "name": "grey",
+              "id": "10028",
+              "hex": "949494"
+            },
+            {
+              "name": "lilac",
+              "id": "10064",
+              "hex": "a96ecc"
+            }
+          ]
+        },
+        {
+          "id": "40477646",
+          "typeName": "Connector for SKÅDIS pegboards.",
+          "price": 1.0,
+          "pipUrl": "https://www.ikea.com/gb/en/p/skadis-connector-for-skadis-pegboards-white-40477646/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "white",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        }
+      ]
+    },
+    "jp": {
+      "locale": "jp/ja",
+      "currency": "JPY",
+      "skus": [
+        {
+          "id": "90321619",
+          "typeName": "有孔ボード",
+          "price": 2999.0,
+          "pipUrl": "https://www.ikea.com/jp/ja/p/skadis-pegboard-white-90321619/",
+          "itemMeasureReferenceText": "76x56 cm",
+          "colors": [
+            {
+              "name": "ホワイト",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "80320804",
+          "typeName": "有孔ボード",
+          "price": 1499.0,
+          "pipUrl": "https://www.ikea.com/jp/ja/p/skadis-pegboard-white-80320804/",
+          "itemMeasureReferenceText": "36x56 cm",
+          "colors": [
+            {
+              "name": "ホワイト",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "10320794",
+          "typeName": "コネクター",
+          "price": 700.0,
+          "pipUrl": "https://www.ikea.com/jp/ja/p/skadis-connector-white-10320794/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "ホワイト",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "60320800",
+          "typeName": "シェルフ",
+          "price": 300.0,
+          "pipUrl": "https://www.ikea.com/jp/ja/p/skadis-shelf-white-60320800/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "ホワイト",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "30321617",
+          "typeName": "フック",
+          "price": 300.0,
+          "pipUrl": "https://www.ikea.com/jp/ja/p/skadis-hook-white-30321617/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "ホワイト",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "00591842",
+          "typeName": "ディスプレイシェルフ",
+          "price": 500.0,
+          "pipUrl": "https://www.ikea.com/jp/ja/p/skadis-display-shelf-white-00591842/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "ホワイト",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "10519884",
+          "typeName": "フック",
+          "price": 150.0,
+          "pipUrl": "https://www.ikea.com/jp/ja/p/skadis-hook-white-10519884/",
+          "itemMeasureReferenceText": "19 mm",
+          "colors": [
+            {
+              "name": "ホワイト",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "70541575",
+          "typeName": "有孔ボード 自立タイプ",
+          "price": 2499.0,
+          "pipUrl": "https://www.ikea.com/jp/ja/p/skadis-freestanding-peg-board-white-70541575/",
+          "itemMeasureReferenceText": "56x37 cm",
+          "colors": [
+            {
+              "name": "ホワイト",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "70321615",
+          "typeName": "クリップ",
+          "price": 300.0,
+          "pipUrl": "https://www.ikea.com/jp/ja/p/skadis-clip-white-70321615/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "ホワイト",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "30335619",
+          "typeName": "フック",
+          "price": 200.0,
+          "pipUrl": "https://www.ikea.com/jp/ja/p/skadis-hook-white-30335619/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "ホワイト",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "80624424",
+          "typeName": "有孔ボード",
+          "price": 2999.0,
+          "pipUrl": "https://www.ikea.com/jp/ja/p/skadis-pegboard-double-sided-dark-grey-blue-dark-lilac-red-80624424/",
+          "itemMeasureReferenceText": "76x56 cm",
+          "colors": [
+            {
+              "name": "ブルー",
+              "id": "10007",
+              "hex": "0058a3"
+            },
+            {
+              "name": "ライラック",
+              "id": "10064",
+              "hex": "a96ecc"
+            }
+          ]
+        },
+        {
+          "id": "30320806",
+          "typeName": "有孔ボード",
+          "price": 2299.0,
+          "pipUrl": "https://www.ikea.com/jp/ja/p/skadis-pegboard-white-30320806/",
+          "itemMeasureReferenceText": "56x56 cm",
+          "colors": [
+            {
+              "name": "ホワイト",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "40320797",
+          "typeName": "小物入れ",
+          "price": 300.0,
+          "pipUrl": "https://www.ikea.com/jp/ja/p/skadis-container-white-40320797/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "ホワイト",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "10517762",
+          "typeName": "収納バスケット3個セット",
+          "price": 1000.0,
+          "pipUrl": "https://www.ikea.com/jp/ja/p/skadis-storage-basket-set-of-3-white-10517762/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "ホワイト",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "60519886",
+          "typeName": "フックラック",
+          "price": 300.0,
+          "pipUrl": "https://www.ikea.com/jp/ja/p/skadis-hook-rack-white-60519886/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "ホワイト",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "30569934",
+          "typeName": "フック",
+          "price": 200.0,
+          "pipUrl": "https://www.ikea.com/jp/ja/p/skadis-hook-black-30569934/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "ブラック",
+              "id": "10139",
+              "hex": "000000"
+            }
+          ]
+        },
+        {
+          "id": "40335911",
+          "typeName": "小物入れ ふた付き",
+          "price": 1000.0,
+          "pipUrl": "https://www.ikea.com/jp/ja/p/skadis-container-with-lid-white-40335911/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "ホワイト",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "00477648",
+          "typeName": "ワードローブ用コネクター",
+          "price": 400.0,
+          "pipUrl": "https://www.ikea.com/jp/ja/p/skadis-connector-for-wardrobe-white-00477648/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "ホワイト",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "60599519",
+          "typeName": "収納バスケット",
+          "price": 1000.0,
+          "pipUrl": "https://www.ikea.com/jp/ja/p/skadis-storage-basket-grey-60599519/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "グレー",
+              "id": "10028",
+              "hex": "949494"
+            }
+          ]
+        },
+        {
+          "id": "20321632",
+          "typeName": "ゴムひも",
+          "price": 300.0,
+          "pipUrl": "https://www.ikea.com/jp/ja/p/skadis-elastic-cord-grey-20321632/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "グレー",
+              "id": "10028",
+              "hex": "949494"
+            }
+          ]
+        },
+        {
+          "id": "00624418",
+          "typeName": "有孔ボード",
+          "price": 1499.0,
+          "pipUrl": "https://www.ikea.com/jp/ja/p/skadis-pegboard-double-sided-dark-grey-blue-dark-lilac-red-00624418/",
+          "itemMeasureReferenceText": "36x56 cm",
+          "colors": [
+            {
+              "name": "ブルー",
+              "id": "10007",
+              "hex": "0058a3"
+            },
+            {
+              "name": "ライラック",
+              "id": "10064",
+              "hex": "a96ecc"
+            }
+          ]
+        }
+      ]
+    },
+    "de": {
+      "locale": "de/de",
+      "currency": "EUR",
+      "skus": [
+        {
+          "id": "00320803",
+          "typeName": "Lochplatte",
+          "price": 13.0,
+          "pipUrl": "https://www.ikea.com/de/de/p/skadis-lochplatte-weiss-00320803/",
+          "itemMeasureReferenceText": "56x56 cm",
+          "colors": [
+            {
+              "name": "weiß",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "00541574",
+          "typeName": "Lochplatte, frei stehend",
+          "price": 18.0,
+          "pipUrl": "https://www.ikea.com/de/de/p/skadis-lochplatte-frei-stehend-weiss-00541574/",
+          "itemMeasureReferenceText": "56x37 cm",
+          "colors": [
+            {
+              "name": "weiß",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "10321618",
+          "typeName": "Lochplatte",
+          "price": 17.0,
+          "pipUrl": "https://www.ikea.com/de/de/p/skadis-lochplatte-weiss-10321618/",
+          "itemMeasureReferenceText": "76x56 cm",
+          "colors": [
+            {
+              "name": "weiß",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "10320789",
+          "typeName": "Befestigungsbeschlag",
+          "price": 5.0,
+          "pipUrl": "https://www.ikea.com/de/de/p/skadis-befestigungsbeschlag-weiss-10320789/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "weiß",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "50335618",
+          "typeName": "Haken",
+          "price": 1.0,
+          "pipUrl": "https://www.ikea.com/de/de/p/skadis-haken-weiss-50335618/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "weiß",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "00321614",
+          "typeName": "Klemme",
+          "price": 2.0,
+          "pipUrl": "https://www.ikea.com/de/de/p/skadis-klemme-weiss-00321614/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "weiß",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "20320798",
+          "typeName": "Behälter",
+          "price": 2.0,
+          "pipUrl": "https://www.ikea.com/de/de/p/skadis-behaelter-weiss-20320798/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "weiß",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "00320799",
+          "typeName": "Ablage",
+          "price": 4.0,
+          "pipUrl": "https://www.ikea.com/de/de/p/skadis-ablage-weiss-00320799/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "weiß",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "20320802",
+          "typeName": "Haken",
+          "price": 2.0,
+          "pipUrl": "https://www.ikea.com/de/de/p/skadis-haken-weiss-20320802/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "weiß",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "50517760",
+          "typeName": "Behälter 3er-Set",
+          "price": 10.0,
+          "pipUrl": "https://www.ikea.com/de/de/p/skadis-behaelter-3er-set-weiss-50517760/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "weiß",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "50320805",
+          "typeName": "Lochplatte",
+          "price": 8.0,
+          "pipUrl": "https://www.ikea.com/de/de/p/skadis-lochplatte-weiss-50320805/",
+          "itemMeasureReferenceText": "36x56 cm",
+          "colors": [
+            {
+              "name": "weiß",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "80335909",
+          "typeName": "Behälter mit Deckel",
+          "price": 9.0,
+          "pipUrl": "https://www.ikea.com/de/de/p/skadis-behaelter-mit-deckel-weiss-80335909/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "weiß",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "20591841",
+          "typeName": "Bilderleiste",
+          "price": 4.0,
+          "pipUrl": "https://www.ikea.com/de/de/p/skadis-bilderleiste-weiss-20591841/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "weiß",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "10599499",
+          "typeName": "Korb",
+          "price": 7.0,
+          "pipUrl": "https://www.ikea.com/de/de/p/skadis-korb-grau-10599499/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "grau",
+              "id": "10028",
+              "hex": "949494"
+            }
+          ]
+        },
+        {
+          "id": "40321631",
+          "typeName": "Elastikband",
+          "price": 2.0,
+          "pipUrl": "https://www.ikea.com/de/de/p/skadis-elastikband-grau-40321631/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "grau",
+              "id": "10028",
+              "hex": "949494"
+            }
+          ]
+        },
+        {
+          "id": "20586420",
+          "typeName": "Zubehör-Set 7-tlg.",
+          "price": 9.0,
+          "pipUrl": "https://www.ikea.com/de/de/p/skadis-zubehoer-set-7-tlg-weiss-20586420/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "weiß",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "20519888",
+          "typeName": "Haken",
+          "price": 1.0,
+          "pipUrl": "https://www.ikea.com/de/de/p/skadis-haken-weiss-20519888/",
+          "itemMeasureReferenceText": "19 mm",
+          "colors": [
+            {
+              "name": "weiß",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "90569945",
+          "typeName": "Werkzeughalter",
+          "price": 1.0,
+          "pipUrl": "https://www.ikea.com/de/de/p/skadis-werkzeughalter-schwarz-90569945/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "schwarz",
+              "id": "10139",
+              "hex": "000000"
+            }
+          ]
+        },
+        {
+          "id": "40519887",
+          "typeName": "Hakenleiste",
+          "price": 2.0,
+          "pipUrl": "https://www.ikea.com/de/de/p/skadis-hakenleiste-weiss-40519887/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "weiß",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "20624417",
+          "typeName": "Lochplatte",
+          "price": 10.0,
+          "pipUrl": "https://www.ikea.com/de/de/p/skadis-lochplatte-doppelseitig-dunkel-graublau-dunkel-lilarot-20624417/",
+          "itemMeasureReferenceText": "36x56 cm",
+          "colors": [
+            {
+              "name": "blau",
+              "id": "10007",
+              "hex": "0058a3"
+            },
+            {
+              "name": "grau",
+              "id": "10028",
+              "hex": "949494"
+            },
+            {
+              "name": "lila",
+              "id": "10064",
+              "hex": "a96ecc"
+            }
+          ]
+        },
+        {
+          "id": "00624423",
+          "typeName": "Lochplatte",
+          "price": 19.0,
+          "pipUrl": "https://www.ikea.com/de/de/p/skadis-lochplatte-doppelseitig-dunkel-graublau-dunkel-lilarot-00624423/",
+          "itemMeasureReferenceText": "76x56 cm",
+          "colors": [
+            {
+              "name": "blau",
+              "id": "10007",
+              "hex": "0058a3"
+            },
+            {
+              "name": "grau",
+              "id": "10028",
+              "hex": "949494"
+            },
+            {
+              "name": "lila",
+              "id": "10064",
+              "hex": "a96ecc"
+            }
+          ]
+        },
+        {
+          "id": "10477643",
+          "typeName": "Beschlag für Schrank",
+          "price": 2.5,
+          "pipUrl": "https://www.ikea.com/de/de/p/skadis-beschlag-fuer-schrank-weiss-10477643/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "weiß",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "40477646",
+          "typeName": "Beschlag für SKÅDIS Lochplatte",
+          "price": 1.0,
+          "pipUrl": "https://www.ikea.com/de/de/p/skadis-beschlag-fuer-skadis-lochplatte-weiss-40477646/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "weiß",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "50569933",
+          "typeName": "Haken",
+          "price": 2.0,
+          "pipUrl": "https://www.ikea.com/de/de/p/skadis-haken-schwarz-50569933/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "schwarz",
+              "id": "10139",
+              "hex": "000000"
+            }
+          ]
+        }
+      ]
+    },
+    "fr": {
+      "locale": "fr/fr",
+      "currency": "EUR",
+      "skus": [
+        {
+          "id": "10321618",
+          "typeName": "Panneau perforé",
+          "price": 15.0,
+          "pipUrl": "https://www.ikea.com/fr/fr/p/skadis-panneau-perfore-blanc-10321618/",
+          "itemMeasureReferenceText": "76x56 cm",
+          "colors": [
+            {
+              "name": "blanc",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "20320798",
+          "typeName": "Récipient",
+          "price": 3.0,
+          "pipUrl": "https://www.ikea.com/fr/fr/p/skadis-recipient-blanc-20320798/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "blanc",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "50335618",
+          "typeName": "Crochet",
+          "price": 2.0,
+          "pipUrl": "https://www.ikea.com/fr/fr/p/skadis-crochet-blanc-50335618/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "blanc",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "50517760",
+          "typeName": "Corbeille de rangement, lot de 3",
+          "price": 10.0,
+          "pipUrl": "https://www.ikea.com/fr/fr/p/skadis-corbeille-de-rangement-lot-de-3-blanc-50517760/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "blanc",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "00320799",
+          "typeName": "Tablette",
+          "price": 4.0,
+          "pipUrl": "https://www.ikea.com/fr/fr/p/skadis-tablette-blanc-00320799/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "blanc",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "80335909",
+          "typeName": "Récipient avec couvercle",
+          "price": 8.0,
+          "pipUrl": "https://www.ikea.com/fr/fr/p/skadis-recipient-avec-couvercle-blanc-80335909/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "blanc",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "10320789",
+          "typeName": "Fixation",
+          "price": 4.0,
+          "pipUrl": "https://www.ikea.com/fr/fr/p/skadis-fixation-blanc-10320789/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "blanc",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "20586420",
+          "typeName": "Accessoire panneau perforé, 7pièces",
+          "price": 9.99,
+          "pipUrl": "https://www.ikea.com/fr/fr/p/skadis-accessoire-panneau-perfore-7pieces-blanc-20586420/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "blanc",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "50320805",
+          "typeName": "Panneau perforé",
+          "price": 10.0,
+          "pipUrl": "https://www.ikea.com/fr/fr/p/skadis-panneau-perfore-blanc-50320805/",
+          "itemMeasureReferenceText": "36x56 cm",
+          "colors": [
+            {
+              "name": "blanc",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "20591841",
+          "typeName": "Étagère de présentation",
+          "price": 4.5,
+          "pipUrl": "https://www.ikea.com/fr/fr/p/skadis-etagere-de-presentation-blanc-20591841/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "blanc",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "00321614",
+          "typeName": "Pince presse-papier",
+          "price": 2.0,
+          "pipUrl": "https://www.ikea.com/fr/fr/p/skadis-pince-presse-papier-blanc-00321614/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "blanc",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "00320803",
+          "typeName": "Panneau perforé",
+          "price": 12.0,
+          "pipUrl": "https://www.ikea.com/fr/fr/p/skadis-panneau-perfore-blanc-00320803/",
+          "itemMeasureReferenceText": "56x56 cm",
+          "colors": [
+            {
+              "name": "blanc",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "20320802",
+          "typeName": "Crochet",
+          "price": 3.0,
+          "pipUrl": "https://www.ikea.com/fr/fr/p/skadis-crochet-blanc-20320802/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "blanc",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "00624423",
+          "typeName": "Panneau perforé",
+          "price": 18.0,
+          "pipUrl": "https://www.ikea.com/fr/fr/p/skadis-panneau-perfore-double-face-bleu-gris-fonce-prune-rouge-00624423/",
+          "itemMeasureReferenceText": "76x56 cm",
+          "colors": [
+            {
+              "name": "bleu",
+              "id": "10007",
+              "hex": "0058a3"
+            },
+            {
+              "name": "gris",
+              "id": "10028",
+              "hex": "949494"
+            },
+            {
+              "name": "mauve",
+              "id": "10064",
+              "hex": "a96ecc"
+            }
+          ]
+        },
+        {
+          "id": "20519888",
+          "typeName": "Crochet",
+          "price": 2.0,
+          "pipUrl": "https://www.ikea.com/fr/fr/p/skadis-crochet-blanc-20519888/",
+          "itemMeasureReferenceText": "19 mm",
+          "colors": [
+            {
+              "name": "blanc",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "40519887",
+          "typeName": "Patère à crochets",
+          "price": 3.0,
+          "pipUrl": "https://www.ikea.com/fr/fr/p/skadis-patere-a-crochets-blanc-40519887/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "blanc",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "00541574",
+          "typeName": "Panneau perforé",
+          "price": 15.0,
+          "pipUrl": "https://www.ikea.com/fr/fr/p/skadis-panneau-perfore-blanc-00541574/",
+          "itemMeasureReferenceText": "56x37 cm",
+          "colors": [
+            {
+              "name": "blanc",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "90569945",
+          "typeName": "Support outil",
+          "price": 2.0,
+          "pipUrl": "https://www.ikea.com/fr/fr/p/skadis-support-outil-noir-90569945/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "noir",
+              "id": "10139",
+              "hex": "000000"
+            }
+          ]
+        },
+        {
+          "id": "50569933",
+          "typeName": "Crochet",
+          "price": 2.5,
+          "pipUrl": "https://www.ikea.com/fr/fr/p/skadis-crochet-noir-50569933/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "noir",
+              "id": "10139",
+              "hex": "000000"
+            }
+          ]
+        },
+        {
+          "id": "40321631",
+          "typeName": "Cordon élastique",
+          "price": 3.0,
+          "pipUrl": "https://www.ikea.com/fr/fr/p/skadis-cordon-elastique-gris-40321631/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "gris",
+              "id": "10028",
+              "hex": "949494"
+            }
+          ]
+        },
+        {
+          "id": "10599499",
+          "typeName": "Corbeille",
+          "price": 6.5,
+          "pipUrl": "https://www.ikea.com/fr/fr/p/skadis-corbeille-gris-10599499/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "gris",
+              "id": "10028",
+              "hex": "949494"
+            }
+          ]
+        },
+        {
+          "id": "40477646",
+          "typeName": "Fixation panneau perf SKÅDIS",
+          "price": 1.0,
+          "pipUrl": "https://www.ikea.com/fr/fr/p/skadis-fixation-panneau-perf-skadis-blanc-40477646/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "blanc",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "10477643",
+          "typeName": "Fixation pour armoire",
+          "price": 4.0,
+          "pipUrl": "https://www.ikea.com/fr/fr/p/skadis-fixation-pour-armoire-blanc-10477643/",
+          "itemMeasureReferenceText": "",
+          "colors": [
+            {
+              "name": "blanc",
+              "id": "10156",
+              "hex": "ffffff"
+            }
+          ]
+        },
+        {
+          "id": "20624417",
+          "typeName": "Panneau perforé",
+          "price": 10.0,
+          "pipUrl": "https://www.ikea.com/fr/fr/p/skadis-panneau-perfore-double-face-bleu-gris-fonce-prune-rouge-20624417/",
+          "itemMeasureReferenceText": "36x56 cm",
+          "colors": [
+            {
+              "name": "bleu",
+              "id": "10007",
+              "hex": "0058a3"
+            },
+            {
+              "name": "gris",
+              "id": "10028",
+              "hex": "949494"
+            },
+            {
+              "name": "mauve",
+              "id": "10064",
+              "hex": "a96ecc"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "dimensions": {
+    "10321618": {
+      "measures": [
+        {
+          "name": "Width",
+          "measure": "76 cm",
+          "type": "00047"
+        },
+        {
+          "name": "Height",
+          "measure": "56 cm",
+          "type": "00041"
+        }
+      ]
+    },
+    "20591841": {
+      "measures": [
+        {
+          "name": "Width",
+          "measure": "32 cm",
+          "type": "00047"
+        },
+        {
+          "name": "Depth",
+          "measure": "11 cm",
+          "type": "00044"
+        }
+      ]
+    },
+    "20320798": {
+      "measures": [
+        {
+          "name": "Width",
+          "measure": "7.5 cm",
+          "type": "00047"
+        },
+        {
+          "name": "Depth",
+          "measure": "9 cm",
+          "type": "00044"
+        },
+        {
+          "name": "Height",
+          "measure": "8 cm",
+          "type": "00041"
+        }
+      ]
+    },
+    "50335618": {
+      "measures": [
+        {
+          "name": "Depth",
+          "measure": "9.5 cm",
+          "type": "00044"
+        },
+        {
+          "name": "Height",
+          "measure": "6 cm",
+          "type": "00041"
+        },
+        {
+          "name": "Package quantity",
+          "measure": "2 pack",
+          "type": "00061"
+        }
+      ]
+    },
+    "00320799": {
+      "measures": [
+        {
+          "name": "Width",
+          "measure": "28 cm",
+          "type": "00047"
+        },
+        {
+          "name": "Depth",
+          "measure": "9 cm",
+          "type": "00044"
+        },
+        {
+          "name": "Height",
+          "measure": "3 cm",
+          "type": "00041"
+        }
+      ]
+    },
+    "00624423": {
+      "measures": [
+        {
+          "name": "Width",
+          "measure": "76 cm",
+          "type": "00047"
+        },
+        {
+          "name": "Height",
+          "measure": "56 cm",
+          "type": "00041"
+        }
+      ]
+    },
+    "00321614": {
+      "measures": [
+        {
+          "name": "Width",
+          "measure": "2 cm",
+          "type": "00047"
+        },
+        {
+          "name": "Height",
+          "measure": "8 cm",
+          "type": "00041"
+        },
+        {
+          "name": "Package quantity",
+          "measure": "2 pack",
+          "type": "00061"
+        }
+      ]
+    },
+    "50517760": {
+      "measures": []
+    },
+    "10320789": {
+      "measures": [
+        {
+          "name": "Width",
+          "measure": "2 cm",
+          "type": "00047"
+        },
+        {
+          "name": "Depth",
+          "measure": "5 cm",
+          "type": "00044"
+        },
+        {
+          "name": "Height",
+          "measure": "18 cm",
+          "type": "00041"
+        },
+        {
+          "name": "Package quantity",
+          "measure": "2 pack",
+          "type": "00061"
+        }
+      ]
+    },
+    "80335909": {
+      "measures": [
+        {
+          "name": "Width",
+          "measure": "7 cm",
+          "type": "00047"
+        },
+        {
+          "name": "Depth",
+          "measure": "8.5 cm",
+          "type": "00044"
+        },
+        {
+          "name": "Height",
+          "measure": "8 cm",
+          "type": "00041"
+        },
+        {
+          "name": "Package quantity",
+          "measure": "3 pack",
+          "type": "00061"
+        }
+      ]
+    },
+    "20519888": {
+      "measures": [
+        {
+          "name": "Diameter",
+          "measure": "19 mm",
+          "type": "00042"
+        },
+        {
+          "name": "Package quantity",
+          "measure": "5 pack",
+          "type": "00061"
+        }
+      ]
+    },
+    "50320805": {
+      "measures": [
+        {
+          "name": "Width",
+          "measure": "36 cm",
+          "type": "00047"
+        },
+        {
+          "name": "Height",
+          "measure": "56 cm",
+          "type": "00041"
+        }
+      ]
+    },
+    "20320802": {
+      "measures": [
+        {
+          "name": "Depth",
+          "measure": "2.5 cm",
+          "type": "00044"
+        },
+        {
+          "name": "Height",
+          "measure": "6 cm",
+          "type": "00041"
+        },
+        {
+          "name": "Package quantity",
+          "measure": "5 pack",
+          "type": "00061"
+        }
+      ]
+    },
+    "00320803": {
+      "measures": [
+        {
+          "name": "Width",
+          "measure": "56 cm",
+          "type": "00047"
+        },
+        {
+          "name": "Height",
+          "measure": "56 cm",
+          "type": "00041"
+        }
+      ]
+    },
+    "40519887": {
+      "measures": [
+        {
+          "name": "Depth",
+          "measure": "2 cm",
+          "type": "00044"
+        },
+        {
+          "name": "Height",
+          "measure": "3 cm",
+          "type": "00041"
+        },
+        {
+          "name": "Width",
+          "measure": "28 cm",
+          "type": "00047"
+        }
+      ]
+    },
+    "20586420": {
+      "measures": []
+    },
+    "40321631": {
+      "measures": [
+        {
+          "name": "Length",
+          "measure": "27 cm",
+          "type": "00001"
+        },
+        {
+          "name": "Package quantity",
+          "measure": "3 pack",
+          "type": "00061"
+        }
+      ]
+    },
+    "10599499": {
+      "measures": [
+        {
+          "name": "Height",
+          "measure": "17 cm",
+          "type": "00041"
+        },
+        {
+          "name": "Length",
+          "measure": "34.5 cm",
+          "type": "00001"
+        },
+        {
+          "name": "Width",
+          "measure": "11.6 cm",
+          "type": "00047"
+        }
+      ]
+    },
+    "00541574": {
+      "measures": [
+        {
+          "name": "Width",
+          "measure": "56 cm",
+          "type": "00047"
+        },
+        {
+          "name": "Height",
+          "measure": "37 cm",
+          "type": "00041"
+        }
+      ]
+    },
+    "50569933": {
+      "measures": [
+        {
+          "name": "Depth",
+          "measure": "4.5 cm",
+          "type": "00044"
+        },
+        {
+          "name": "Height",
+          "measure": "7 cm",
+          "type": "00041"
+        },
+        {
+          "name": "Package quantity",
+          "measure": "3 pack",
+          "type": "00061"
+        }
+      ]
+    },
+    "10477643": {
+      "measures": [
+        {
+          "name": "Width",
+          "measure": "5 cm",
+          "type": "00047"
+        },
+        {
+          "name": "Depth",
+          "measure": "6 cm",
+          "type": "00044"
+        },
+        {
+          "name": "Height",
+          "measure": "19 cm",
+          "type": "00041"
+        },
+        {
+          "name": "Package quantity",
+          "measure": "2 pack",
+          "type": "00061"
+        }
+      ]
+    },
+    "20624417": {
+      "measures": [
+        {
+          "name": "Width",
+          "measure": "36 cm",
+          "type": "00047"
+        },
+        {
+          "name": "Height",
+          "measure": "56 cm",
+          "type": "00041"
+        }
+      ]
+    },
+    "40477646": {
+      "measures": [
+        {
+          "name": "Width",
+          "measure": "3 cm",
+          "type": "00047"
+        },
+        {
+          "name": "Height",
+          "measure": "6.5 cm",
+          "type": "00041"
+        },
+        {
+          "name": "Package quantity",
+          "measure": "2 pack",
+          "type": "00061"
+        },
+        {
+          "name": "Depth",
+          "measure": "0.2 cm",
+          "type": "00044"
+        }
+      ]
+    }
+  },
+  "jpDimensions": {
+    "90321619": {
+      "measures": [
+        {
+          "name": "幅",
+          "measure": "76 cm",
+          "type": "00047",
+          "nameEn": "Width"
+        },
+        {
+          "name": "高さ",
+          "measure": "56 cm",
+          "type": "00041",
+          "nameEn": "Height"
+        }
+      ]
+    },
+    "80320804": {
+      "measures": [
+        {
+          "name": "幅",
+          "measure": "36 cm",
+          "type": "00047",
+          "nameEn": "Width"
+        },
+        {
+          "name": "高さ",
+          "measure": "56 cm",
+          "type": "00041",
+          "nameEn": "Height"
+        }
+      ]
+    },
+    "30321617": {
+      "measures": [
+        {
+          "name": "奥行き",
+          "measure": "2.5 cm",
+          "type": "00044",
+          "nameEn": "Depth"
+        },
+        {
+          "name": "高さ",
+          "measure": "6 cm",
+          "type": "00041",
+          "nameEn": "Height"
+        },
+        {
+          "name": "パッケージ個数",
+          "measure": "5 ピース",
+          "type": "00061",
+          "nameEn": "Package quantity"
+        }
+      ]
+    },
+    "10519884": {
+      "measures": [
+        {
+          "name": "直径",
+          "measure": "19 mm",
+          "type": "00042",
+          "nameEn": "Diameter"
+        },
+        {
+          "name": "パッケージ個数",
+          "measure": "5 ピース",
+          "type": "00061",
+          "nameEn": "Package quantity"
+        }
+      ]
+    },
+    "30335619": {
+      "measures": [
+        {
+          "name": "奥行き",
+          "measure": "9.5 cm",
+          "type": "00044",
+          "nameEn": "Depth"
+        },
+        {
+          "name": "高さ",
+          "measure": "6 cm",
+          "type": "00041",
+          "nameEn": "Height"
+        },
+        {
+          "name": "パッケージ個数",
+          "measure": "2 ピース",
+          "type": "00061",
+          "nameEn": "Package quantity"
+        }
+      ]
+    },
+    "80624424": {
+      "measures": [
+        {
+          "name": "幅",
+          "measure": "76 cm",
+          "type": "00047",
+          "nameEn": "Width"
+        },
+        {
+          "name": "高さ",
+          "measure": "56 cm",
+          "type": "00041",
+          "nameEn": "Height"
+        }
+      ]
+    },
+    "30320806": {
+      "measures": [
+        {
+          "name": "幅",
+          "measure": "56 cm",
+          "type": "00047",
+          "nameEn": "Width"
+        },
+        {
+          "name": "高さ",
+          "measure": "56 cm",
+          "type": "00041",
+          "nameEn": "Height"
+        }
+      ]
+    },
+    "00624418": {
+      "measures": [
+        {
+          "name": "幅",
+          "measure": "36 cm",
+          "type": "00047",
+          "nameEn": "Width"
+        },
+        {
+          "name": "高さ",
+          "measure": "56 cm",
+          "type": "00041",
+          "nameEn": "Height"
+        }
+      ]
+    }
+  },
+  "jpMatches": [
+    {
+      "jpId": "90321619",
+      "gbId": "10321618",
+      "usId": "10321618",
+      "confidence": "high",
+      "evidence": "slug 'skadis-pegboard-white' ambiguous (3 gb candidates), disambiguated by 2 matching dimension pair(s): [('Height', '56 cm'), ('Width', '76 cm')]",
+      "jpTypeName": "有孔ボード",
+      "jpPipUrl": "https://www.ikea.com/jp/ja/p/skadis-pegboard-white-90321619/"
+    },
+    {
+      "jpId": "80320804",
+      "gbId": "50320805",
+      "usId": "50320805",
+      "confidence": "high",
+      "evidence": "slug 'skadis-pegboard-white' ambiguous (3 gb candidates), disambiguated by 2 matching dimension pair(s): [('Height', '56 cm'), ('Width', '36 cm')]",
+      "jpTypeName": "有孔ボード",
+      "jpPipUrl": "https://www.ikea.com/jp/ja/p/skadis-pegboard-white-80320804/"
+    },
+    {
+      "jpId": "10320794",
+      "gbId": "10320789",
+      "usId": "10320789",
+      "confidence": "high",
+      "evidence": "unique slug match 'skadis-connector-white' (no reference-text to cross-check, but slug is unique in gb catalogue)",
+      "jpTypeName": "コネクター",
+      "jpPipUrl": "https://www.ikea.com/jp/ja/p/skadis-connector-white-10320794/"
+    },
+    {
+      "jpId": "60320800",
+      "gbId": "00320799",
+      "usId": "00320799",
+      "confidence": "high",
+      "evidence": "unique slug match 'skadis-shelf-white' (no reference-text to cross-check, but slug is unique in gb catalogue)",
+      "jpTypeName": "シェルフ",
+      "jpPipUrl": "https://www.ikea.com/jp/ja/p/skadis-shelf-white-60320800/"
+    },
+    {
+      "jpId": "30321617",
+      "gbId": "20320802",
+      "usId": "20320802",
+      "confidence": "high",
+      "evidence": "slug 'skadis-hook-white' ambiguous (3 gb candidates), disambiguated by 2 matching dimension pair(s): [('Depth', '2.5 cm'), ('Height', '6 cm')]",
+      "jpTypeName": "フック",
+      "jpPipUrl": "https://www.ikea.com/jp/ja/p/skadis-hook-white-30321617/"
+    },
+    {
+      "jpId": "00591842",
+      "gbId": "20591841",
+      "usId": "20591841",
+      "confidence": "high",
+      "evidence": "unique slug match 'skadis-display-shelf-white' (no reference-text to cross-check, but slug is unique in gb catalogue)",
+      "jpTypeName": "ディスプレイシェルフ",
+      "jpPipUrl": "https://www.ikea.com/jp/ja/p/skadis-display-shelf-white-00591842/"
+    },
+    {
+      "jpId": "10519884",
+      "gbId": "20519888",
+      "usId": "20519888",
+      "confidence": "high",
+      "evidence": "slug 'skadis-hook-white' ambiguous (3 gb candidates), disambiguated by 1 matching dimension pair(s): [('Diameter', '19 mm')]",
+      "jpTypeName": "フック",
+      "jpPipUrl": "https://www.ikea.com/jp/ja/p/skadis-hook-white-10519884/"
+    },
+    {
+      "jpId": "70541575",
+      "gbId": "00541574",
+      "usId": "00541574",
+      "confidence": "high",
+      "evidence": "unique slug match 'skadis-freestanding-peg-board-white', itemMeasureReferenceText matches (56x37 cm)",
+      "jpTypeName": "有孔ボード 自立タイプ",
+      "jpPipUrl": "https://www.ikea.com/jp/ja/p/skadis-freestanding-peg-board-white-70541575/"
+    },
+    {
+      "jpId": "70321615",
+      "gbId": "00321614",
+      "usId": "00321614",
+      "confidence": "high",
+      "evidence": "unique slug match 'skadis-clip-white' (no reference-text to cross-check, but slug is unique in gb catalogue)",
+      "jpTypeName": "クリップ",
+      "jpPipUrl": "https://www.ikea.com/jp/ja/p/skadis-clip-white-70321615/"
+    },
+    {
+      "jpId": "30335619",
+      "gbId": "50335618",
+      "usId": "50335618",
+      "confidence": "high",
+      "evidence": "slug 'skadis-hook-white' ambiguous (3 gb candidates), disambiguated by 2 matching dimension pair(s): [('Depth', '9.5 cm'), ('Height', '6 cm')]",
+      "jpTypeName": "フック",
+      "jpPipUrl": "https://www.ikea.com/jp/ja/p/skadis-hook-white-30335619/"
+    },
+    {
+      "jpId": "80624424",
+      "gbId": "00624423",
+      "usId": "00624423",
+      "confidence": "high",
+      "evidence": "slug 'skadis-pegboard-double-sided-dark-grey-blue-dark-lilac-red' ambiguous (2 gb candidates), disambiguated by 2 matching dimension pair(s): [('Height', '56 cm'), ('Width', '76 cm')]",
+      "jpTypeName": "有孔ボード",
+      "jpPipUrl": "https://www.ikea.com/jp/ja/p/skadis-pegboard-double-sided-dark-grey-blue-dark-lilac-red-80624424/"
+    },
+    {
+      "jpId": "30320806",
+      "gbId": "00320803",
+      "usId": "00320803",
+      "confidence": "high",
+      "evidence": "slug 'skadis-pegboard-white' ambiguous (3 gb candidates), disambiguated by 2 matching dimension pair(s): [('Height', '56 cm'), ('Width', '56 cm')]",
+      "jpTypeName": "有孔ボード",
+      "jpPipUrl": "https://www.ikea.com/jp/ja/p/skadis-pegboard-white-30320806/"
+    },
+    {
+      "jpId": "40320797",
+      "gbId": "20320798",
+      "usId": "20320798",
+      "confidence": "high",
+      "evidence": "unique slug match 'skadis-container-white' (no reference-text to cross-check, but slug is unique in gb catalogue)",
+      "jpTypeName": "小物入れ",
+      "jpPipUrl": "https://www.ikea.com/jp/ja/p/skadis-container-white-40320797/"
+    },
+    {
+      "jpId": "10517762",
+      "gbId": "50517760",
+      "usId": "50517760",
+      "confidence": "high",
+      "evidence": "unique slug match 'skadis-storage-basket-set-of-3-white' (no reference-text to cross-check, but slug is unique in gb catalogue)",
+      "jpTypeName": "収納バスケット3個セット",
+      "jpPipUrl": "https://www.ikea.com/jp/ja/p/skadis-storage-basket-set-of-3-white-10517762/"
+    },
+    {
+      "jpId": "60519886",
+      "gbId": "40519887",
+      "usId": "40519887",
+      "confidence": "high",
+      "evidence": "unique slug match 'skadis-hook-rack-white' (no reference-text to cross-check, but slug is unique in gb catalogue)",
+      "jpTypeName": "フックラック",
+      "jpPipUrl": "https://www.ikea.com/jp/ja/p/skadis-hook-rack-white-60519886/"
+    },
+    {
+      "jpId": "30569934",
+      "gbId": "50569933",
+      "usId": null,
+      "confidence": "high",
+      "evidence": "unique slug match 'skadis-hook-black' (no reference-text to cross-check, but slug is unique in gb catalogue)",
+      "jpTypeName": "フック",
+      "jpPipUrl": "https://www.ikea.com/jp/ja/p/skadis-hook-black-30569934/"
+    },
+    {
+      "jpId": "40335911",
+      "gbId": "80335909",
+      "usId": "80335909",
+      "confidence": "high",
+      "evidence": "unique slug match 'skadis-container-with-lid-white' (no reference-text to cross-check, but slug is unique in gb catalogue)",
+      "jpTypeName": "小物入れ ふた付き",
+      "jpPipUrl": "https://www.ikea.com/jp/ja/p/skadis-container-with-lid-white-40335911/"
+    },
+    {
+      "jpId": "00477648",
+      "gbId": "10477643",
+      "usId": "10477643",
+      "confidence": "high",
+      "evidence": "unique slug match 'skadis-connector-for-wardrobe-white' (no reference-text to cross-check, but slug is unique in gb catalogue)",
+      "jpTypeName": "ワードローブ用コネクター",
+      "jpPipUrl": "https://www.ikea.com/jp/ja/p/skadis-connector-for-wardrobe-white-00477648/"
+    },
+    {
+      "jpId": "60599519",
+      "gbId": "10599499",
+      "usId": "10599499",
+      "confidence": "high",
+      "evidence": "unique slug match 'skadis-storage-basket-grey' (no reference-text to cross-check, but slug is unique in gb catalogue)",
+      "jpTypeName": "収納バスケット",
+      "jpPipUrl": "https://www.ikea.com/jp/ja/p/skadis-storage-basket-grey-60599519/"
+    },
+    {
+      "jpId": "20321632",
+      "gbId": "40321631",
+      "usId": "40321631",
+      "confidence": "high",
+      "evidence": "unique slug match 'skadis-elastic-cord-grey' (no reference-text to cross-check, but slug is unique in gb catalogue)",
+      "jpTypeName": "ゴムひも",
+      "jpPipUrl": "https://www.ikea.com/jp/ja/p/skadis-elastic-cord-grey-20321632/"
+    },
+    {
+      "jpId": "00624418",
+      "gbId": "20624417",
+      "usId": "20624417",
+      "confidence": "high",
+      "evidence": "slug 'skadis-pegboard-double-sided-dark-grey-blue-dark-lilac-red' ambiguous (2 gb candidates), disambiguated by 2 matching dimension pair(s): [('Height', '56 cm'), ('Width', '36 cm')]",
+      "jpTypeName": "有孔ボード",
+      "jpPipUrl": "https://www.ikea.com/jp/ja/p/skadis-pegboard-double-sided-dark-grey-blue-dark-lilac-red-00624418/"
+    }
+  ],
+  "deDimensions": {
+    "90569945": {
+      "measures": [
+        {
+          "name": "Tiefe",
+          "measure": "5 cm",
+          "type": "00044",
+          "nameEn": "Depth"
+        },
+        {
+          "name": "Höhe",
+          "measure": "5.5 cm",
+          "type": "00041",
+          "nameEn": "Height"
+        }
+      ]
+    }
+  },
+  "deMatches": [
+    {
+      "deId": "00320803",
+      "gbId": "00320803",
+      "usId": "00320803",
+      "confidence": "high",
+      "evidence": "identical global item id '00320803' present in gb catalogue (id-exact match; strongest available signal)",
+      "deTypeName": "Lochplatte",
+      "dePipUrl": "https://www.ikea.com/de/de/p/skadis-lochplatte-weiss-00320803/"
+    },
+    {
+      "deId": "00541574",
+      "gbId": "00541574",
+      "usId": "00541574",
+      "confidence": "high",
+      "evidence": "identical global item id '00541574' present in gb catalogue (id-exact match; strongest available signal)",
+      "deTypeName": "Lochplatte, frei stehend",
+      "dePipUrl": "https://www.ikea.com/de/de/p/skadis-lochplatte-frei-stehend-weiss-00541574/"
+    },
+    {
+      "deId": "10321618",
+      "gbId": "10321618",
+      "usId": "10321618",
+      "confidence": "high",
+      "evidence": "identical global item id '10321618' present in gb catalogue (id-exact match; strongest available signal)",
+      "deTypeName": "Lochplatte",
+      "dePipUrl": "https://www.ikea.com/de/de/p/skadis-lochplatte-weiss-10321618/"
+    },
+    {
+      "deId": "10320789",
+      "gbId": "10320789",
+      "usId": "10320789",
+      "confidence": "high",
+      "evidence": "identical global item id '10320789' present in gb catalogue (id-exact match; strongest available signal)",
+      "deTypeName": "Befestigungsbeschlag",
+      "dePipUrl": "https://www.ikea.com/de/de/p/skadis-befestigungsbeschlag-weiss-10320789/"
+    },
+    {
+      "deId": "50335618",
+      "gbId": "50335618",
+      "usId": "50335618",
+      "confidence": "high",
+      "evidence": "identical global item id '50335618' present in gb catalogue (id-exact match; strongest available signal)",
+      "deTypeName": "Haken",
+      "dePipUrl": "https://www.ikea.com/de/de/p/skadis-haken-weiss-50335618/"
+    },
+    {
+      "deId": "00321614",
+      "gbId": "00321614",
+      "usId": "00321614",
+      "confidence": "high",
+      "evidence": "identical global item id '00321614' present in gb catalogue (id-exact match; strongest available signal)",
+      "deTypeName": "Klemme",
+      "dePipUrl": "https://www.ikea.com/de/de/p/skadis-klemme-weiss-00321614/"
+    },
+    {
+      "deId": "20320798",
+      "gbId": "20320798",
+      "usId": "20320798",
+      "confidence": "high",
+      "evidence": "identical global item id '20320798' present in gb catalogue (id-exact match; strongest available signal)",
+      "deTypeName": "Behälter",
+      "dePipUrl": "https://www.ikea.com/de/de/p/skadis-behaelter-weiss-20320798/"
+    },
+    {
+      "deId": "00320799",
+      "gbId": "00320799",
+      "usId": "00320799",
+      "confidence": "high",
+      "evidence": "identical global item id '00320799' present in gb catalogue (id-exact match; strongest available signal)",
+      "deTypeName": "Ablage",
+      "dePipUrl": "https://www.ikea.com/de/de/p/skadis-ablage-weiss-00320799/"
+    },
+    {
+      "deId": "20320802",
+      "gbId": "20320802",
+      "usId": "20320802",
+      "confidence": "high",
+      "evidence": "identical global item id '20320802' present in gb catalogue (id-exact match; strongest available signal)",
+      "deTypeName": "Haken",
+      "dePipUrl": "https://www.ikea.com/de/de/p/skadis-haken-weiss-20320802/"
+    },
+    {
+      "deId": "50517760",
+      "gbId": "50517760",
+      "usId": "50517760",
+      "confidence": "high",
+      "evidence": "identical global item id '50517760' present in gb catalogue (id-exact match; strongest available signal)",
+      "deTypeName": "Behälter 3er-Set",
+      "dePipUrl": "https://www.ikea.com/de/de/p/skadis-behaelter-3er-set-weiss-50517760/"
+    },
+    {
+      "deId": "50320805",
+      "gbId": "50320805",
+      "usId": "50320805",
+      "confidence": "high",
+      "evidence": "identical global item id '50320805' present in gb catalogue (id-exact match; strongest available signal)",
+      "deTypeName": "Lochplatte",
+      "dePipUrl": "https://www.ikea.com/de/de/p/skadis-lochplatte-weiss-50320805/"
+    },
+    {
+      "deId": "80335909",
+      "gbId": "80335909",
+      "usId": "80335909",
+      "confidence": "high",
+      "evidence": "identical global item id '80335909' present in gb catalogue (id-exact match; strongest available signal)",
+      "deTypeName": "Behälter mit Deckel",
+      "dePipUrl": "https://www.ikea.com/de/de/p/skadis-behaelter-mit-deckel-weiss-80335909/"
+    },
+    {
+      "deId": "20591841",
+      "gbId": "20591841",
+      "usId": "20591841",
+      "confidence": "high",
+      "evidence": "identical global item id '20591841' present in gb catalogue (id-exact match; strongest available signal)",
+      "deTypeName": "Bilderleiste",
+      "dePipUrl": "https://www.ikea.com/de/de/p/skadis-bilderleiste-weiss-20591841/"
+    },
+    {
+      "deId": "10599499",
+      "gbId": "10599499",
+      "usId": "10599499",
+      "confidence": "high",
+      "evidence": "identical global item id '10599499' present in gb catalogue (id-exact match; strongest available signal)",
+      "deTypeName": "Korb",
+      "dePipUrl": "https://www.ikea.com/de/de/p/skadis-korb-grau-10599499/"
+    },
+    {
+      "deId": "40321631",
+      "gbId": "40321631",
+      "usId": "40321631",
+      "confidence": "high",
+      "evidence": "identical global item id '40321631' present in gb catalogue (id-exact match; strongest available signal)",
+      "deTypeName": "Elastikband",
+      "dePipUrl": "https://www.ikea.com/de/de/p/skadis-elastikband-grau-40321631/"
+    },
+    {
+      "deId": "20586420",
+      "gbId": "20586420",
+      "usId": "20586420",
+      "confidence": "high",
+      "evidence": "identical global item id '20586420' present in gb catalogue (id-exact match; strongest available signal)",
+      "deTypeName": "Zubehör-Set 7-tlg.",
+      "dePipUrl": "https://www.ikea.com/de/de/p/skadis-zubehoer-set-7-tlg-weiss-20586420/"
+    },
+    {
+      "deId": "20519888",
+      "gbId": "20519888",
+      "usId": "20519888",
+      "confidence": "high",
+      "evidence": "identical global item id '20519888' present in gb catalogue (id-exact match; strongest available signal)",
+      "deTypeName": "Haken",
+      "dePipUrl": "https://www.ikea.com/de/de/p/skadis-haken-weiss-20519888/"
+    },
+    {
+      "deId": "90569945",
+      "gbId": null,
+      "usId": null,
+      "confidence": "unmatched",
+      "evidence": "no gb SKU shares id or slug 'skadis-werkzeughalter-schwarz'; full-catalogue dimension search found no adequately-confident candidate (best overlap=1)",
+      "deTypeName": "Werkzeughalter",
+      "dePipUrl": "https://www.ikea.com/de/de/p/skadis-werkzeughalter-schwarz-90569945/"
+    },
+    {
+      "deId": "40519887",
+      "gbId": "40519887",
+      "usId": "40519887",
+      "confidence": "high",
+      "evidence": "identical global item id '40519887' present in gb catalogue (id-exact match; strongest available signal)",
+      "deTypeName": "Hakenleiste",
+      "dePipUrl": "https://www.ikea.com/de/de/p/skadis-hakenleiste-weiss-40519887/"
+    },
+    {
+      "deId": "20624417",
+      "gbId": "20624417",
+      "usId": "20624417",
+      "confidence": "high",
+      "evidence": "identical global item id '20624417' present in gb catalogue (id-exact match; strongest available signal)",
+      "deTypeName": "Lochplatte",
+      "dePipUrl": "https://www.ikea.com/de/de/p/skadis-lochplatte-doppelseitig-dunkel-graublau-dunkel-lilarot-20624417/"
+    },
+    {
+      "deId": "00624423",
+      "gbId": "00624423",
+      "usId": "00624423",
+      "confidence": "high",
+      "evidence": "identical global item id '00624423' present in gb catalogue (id-exact match; strongest available signal)",
+      "deTypeName": "Lochplatte",
+      "dePipUrl": "https://www.ikea.com/de/de/p/skadis-lochplatte-doppelseitig-dunkel-graublau-dunkel-lilarot-00624423/"
+    },
+    {
+      "deId": "10477643",
+      "gbId": "10477643",
+      "usId": "10477643",
+      "confidence": "high",
+      "evidence": "identical global item id '10477643' present in gb catalogue (id-exact match; strongest available signal)",
+      "deTypeName": "Beschlag für Schrank",
+      "dePipUrl": "https://www.ikea.com/de/de/p/skadis-beschlag-fuer-schrank-weiss-10477643/"
+    },
+    {
+      "deId": "40477646",
+      "gbId": "40477646",
+      "usId": "40477646",
+      "confidence": "high",
+      "evidence": "identical global item id '40477646' present in gb catalogue (id-exact match; strongest available signal)",
+      "deTypeName": "Beschlag für SKÅDIS Lochplatte",
+      "dePipUrl": "https://www.ikea.com/de/de/p/skadis-beschlag-fuer-skadis-lochplatte-weiss-40477646/"
+    },
+    {
+      "deId": "50569933",
+      "gbId": "50569933",
+      "usId": null,
+      "confidence": "high",
+      "evidence": "identical global item id '50569933' present in gb catalogue (id-exact match; strongest available signal)",
+      "deTypeName": "Haken",
+      "dePipUrl": "https://www.ikea.com/de/de/p/skadis-haken-schwarz-50569933/"
+    }
+  ],
+  "frDimensions": {
+    "90569945": {
+      "measures": [
+        {
+          "name": "Profondeur",
+          "measure": "5 cm",
+          "type": "00044",
+          "nameEn": "Depth"
+        },
+        {
+          "name": "Hauteur",
+          "measure": "5.5 cm",
+          "type": "00041",
+          "nameEn": "Height"
+        }
+      ]
+    }
+  },
+  "frMatches": [
+    {
+      "frId": "10321618",
+      "gbId": "10321618",
+      "usId": "10321618",
+      "confidence": "high",
+      "evidence": "identical global item id '10321618' present in gb catalogue (id-exact match; strongest available signal)",
+      "frTypeName": "Panneau perforé",
+      "frPipUrl": "https://www.ikea.com/fr/fr/p/skadis-panneau-perfore-blanc-10321618/"
+    },
+    {
+      "frId": "20320798",
+      "gbId": "20320798",
+      "usId": "20320798",
+      "confidence": "high",
+      "evidence": "identical global item id '20320798' present in gb catalogue (id-exact match; strongest available signal)",
+      "frTypeName": "Récipient",
+      "frPipUrl": "https://www.ikea.com/fr/fr/p/skadis-recipient-blanc-20320798/"
+    },
+    {
+      "frId": "50335618",
+      "gbId": "50335618",
+      "usId": "50335618",
+      "confidence": "high",
+      "evidence": "identical global item id '50335618' present in gb catalogue (id-exact match; strongest available signal)",
+      "frTypeName": "Crochet",
+      "frPipUrl": "https://www.ikea.com/fr/fr/p/skadis-crochet-blanc-50335618/"
+    },
+    {
+      "frId": "50517760",
+      "gbId": "50517760",
+      "usId": "50517760",
+      "confidence": "high",
+      "evidence": "identical global item id '50517760' present in gb catalogue (id-exact match; strongest available signal)",
+      "frTypeName": "Corbeille de rangement, lot de 3",
+      "frPipUrl": "https://www.ikea.com/fr/fr/p/skadis-corbeille-de-rangement-lot-de-3-blanc-50517760/"
+    },
+    {
+      "frId": "00320799",
+      "gbId": "00320799",
+      "usId": "00320799",
+      "confidence": "high",
+      "evidence": "identical global item id '00320799' present in gb catalogue (id-exact match; strongest available signal)",
+      "frTypeName": "Tablette",
+      "frPipUrl": "https://www.ikea.com/fr/fr/p/skadis-tablette-blanc-00320799/"
+    },
+    {
+      "frId": "80335909",
+      "gbId": "80335909",
+      "usId": "80335909",
+      "confidence": "high",
+      "evidence": "identical global item id '80335909' present in gb catalogue (id-exact match; strongest available signal)",
+      "frTypeName": "Récipient avec couvercle",
+      "frPipUrl": "https://www.ikea.com/fr/fr/p/skadis-recipient-avec-couvercle-blanc-80335909/"
+    },
+    {
+      "frId": "10320789",
+      "gbId": "10320789",
+      "usId": "10320789",
+      "confidence": "high",
+      "evidence": "identical global item id '10320789' present in gb catalogue (id-exact match; strongest available signal)",
+      "frTypeName": "Fixation",
+      "frPipUrl": "https://www.ikea.com/fr/fr/p/skadis-fixation-blanc-10320789/"
+    },
+    {
+      "frId": "20586420",
+      "gbId": "20586420",
+      "usId": "20586420",
+      "confidence": "high",
+      "evidence": "identical global item id '20586420' present in gb catalogue (id-exact match; strongest available signal)",
+      "frTypeName": "Accessoire panneau perforé, 7pièces",
+      "frPipUrl": "https://www.ikea.com/fr/fr/p/skadis-accessoire-panneau-perfore-7pieces-blanc-20586420/"
+    },
+    {
+      "frId": "50320805",
+      "gbId": "50320805",
+      "usId": "50320805",
+      "confidence": "high",
+      "evidence": "identical global item id '50320805' present in gb catalogue (id-exact match; strongest available signal)",
+      "frTypeName": "Panneau perforé",
+      "frPipUrl": "https://www.ikea.com/fr/fr/p/skadis-panneau-perfore-blanc-50320805/"
+    },
+    {
+      "frId": "20591841",
+      "gbId": "20591841",
+      "usId": "20591841",
+      "confidence": "high",
+      "evidence": "identical global item id '20591841' present in gb catalogue (id-exact match; strongest available signal)",
+      "frTypeName": "Étagère de présentation",
+      "frPipUrl": "https://www.ikea.com/fr/fr/p/skadis-etagere-de-presentation-blanc-20591841/"
+    },
+    {
+      "frId": "00321614",
+      "gbId": "00321614",
+      "usId": "00321614",
+      "confidence": "high",
+      "evidence": "identical global item id '00321614' present in gb catalogue (id-exact match; strongest available signal)",
+      "frTypeName": "Pince presse-papier",
+      "frPipUrl": "https://www.ikea.com/fr/fr/p/skadis-pince-presse-papier-blanc-00321614/"
+    },
+    {
+      "frId": "00320803",
+      "gbId": "00320803",
+      "usId": "00320803",
+      "confidence": "high",
+      "evidence": "identical global item id '00320803' present in gb catalogue (id-exact match; strongest available signal)",
+      "frTypeName": "Panneau perforé",
+      "frPipUrl": "https://www.ikea.com/fr/fr/p/skadis-panneau-perfore-blanc-00320803/"
+    },
+    {
+      "frId": "20320802",
+      "gbId": "20320802",
+      "usId": "20320802",
+      "confidence": "high",
+      "evidence": "identical global item id '20320802' present in gb catalogue (id-exact match; strongest available signal)",
+      "frTypeName": "Crochet",
+      "frPipUrl": "https://www.ikea.com/fr/fr/p/skadis-crochet-blanc-20320802/"
+    },
+    {
+      "frId": "00624423",
+      "gbId": "00624423",
+      "usId": "00624423",
+      "confidence": "high",
+      "evidence": "identical global item id '00624423' present in gb catalogue (id-exact match; strongest available signal)",
+      "frTypeName": "Panneau perforé",
+      "frPipUrl": "https://www.ikea.com/fr/fr/p/skadis-panneau-perfore-double-face-bleu-gris-fonce-prune-rouge-00624423/"
+    },
+    {
+      "frId": "20519888",
+      "gbId": "20519888",
+      "usId": "20519888",
+      "confidence": "high",
+      "evidence": "identical global item id '20519888' present in gb catalogue (id-exact match; strongest available signal)",
+      "frTypeName": "Crochet",
+      "frPipUrl": "https://www.ikea.com/fr/fr/p/skadis-crochet-blanc-20519888/"
+    },
+    {
+      "frId": "40519887",
+      "gbId": "40519887",
+      "usId": "40519887",
+      "confidence": "high",
+      "evidence": "identical global item id '40519887' present in gb catalogue (id-exact match; strongest available signal)",
+      "frTypeName": "Patère à crochets",
+      "frPipUrl": "https://www.ikea.com/fr/fr/p/skadis-patere-a-crochets-blanc-40519887/"
+    },
+    {
+      "frId": "00541574",
+      "gbId": "00541574",
+      "usId": "00541574",
+      "confidence": "high",
+      "evidence": "identical global item id '00541574' present in gb catalogue (id-exact match; strongest available signal)",
+      "frTypeName": "Panneau perforé",
+      "frPipUrl": "https://www.ikea.com/fr/fr/p/skadis-panneau-perfore-blanc-00541574/"
+    },
+    {
+      "frId": "90569945",
+      "gbId": null,
+      "usId": null,
+      "confidence": "unmatched",
+      "evidence": "no gb SKU shares id or slug 'skadis-support-outil-noir'; full-catalogue dimension search found no adequately-confident candidate (best overlap=1)",
+      "frTypeName": "Support outil",
+      "frPipUrl": "https://www.ikea.com/fr/fr/p/skadis-support-outil-noir-90569945/"
+    },
+    {
+      "frId": "50569933",
+      "gbId": "50569933",
+      "usId": null,
+      "confidence": "high",
+      "evidence": "identical global item id '50569933' present in gb catalogue (id-exact match; strongest available signal)",
+      "frTypeName": "Crochet",
+      "frPipUrl": "https://www.ikea.com/fr/fr/p/skadis-crochet-noir-50569933/"
+    },
+    {
+      "frId": "40321631",
+      "gbId": "40321631",
+      "usId": "40321631",
+      "confidence": "high",
+      "evidence": "identical global item id '40321631' present in gb catalogue (id-exact match; strongest available signal)",
+      "frTypeName": "Cordon élastique",
+      "frPipUrl": "https://www.ikea.com/fr/fr/p/skadis-cordon-elastique-gris-40321631/"
+    },
+    {
+      "frId": "10599499",
+      "gbId": "10599499",
+      "usId": "10599499",
+      "confidence": "high",
+      "evidence": "identical global item id '10599499' present in gb catalogue (id-exact match; strongest available signal)",
+      "frTypeName": "Corbeille",
+      "frPipUrl": "https://www.ikea.com/fr/fr/p/skadis-corbeille-gris-10599499/"
+    },
+    {
+      "frId": "40477646",
+      "gbId": "40477646",
+      "usId": "40477646",
+      "confidence": "high",
+      "evidence": "identical global item id '40477646' present in gb catalogue (id-exact match; strongest available signal)",
+      "frTypeName": "Fixation panneau perf SKÅDIS",
+      "frPipUrl": "https://www.ikea.com/fr/fr/p/skadis-fixation-panneau-perf-skadis-blanc-40477646/"
+    },
+    {
+      "frId": "10477643",
+      "gbId": "10477643",
+      "usId": "10477643",
+      "confidence": "high",
+      "evidence": "identical global item id '10477643' present in gb catalogue (id-exact match; strongest available signal)",
+      "frTypeName": "Fixation pour armoire",
+      "frPipUrl": "https://www.ikea.com/fr/fr/p/skadis-fixation-pour-armoire-blanc-10477643/"
+    },
+    {
+      "frId": "20624417",
+      "gbId": "20624417",
+      "usId": "20624417",
+      "confidence": "high",
+      "evidence": "identical global item id '20624417' present in gb catalogue (id-exact match; strongest available signal)",
+      "frTypeName": "Panneau perforé",
+      "frPipUrl": "https://www.ikea.com/fr/fr/p/skadis-panneau-perfore-double-face-bleu-gris-fonce-prune-rouge-20624417/"
+    }
+  ],
+  "unmatched": {
+    "jpOnly": [],
+    "usOnly": [
+      "20586420",
+      "40477646"
+    ],
+    "gbOnly": [
+      "20586420",
+      "40477646"
+    ],
+    "deOnly": [
+      "90569945"
+    ],
+    "frOnly": [
+      "90569945"
+    ],
+    "gbOnlyVsDe": [],
+    "gbOnlyVsFr": []
+  }
+}

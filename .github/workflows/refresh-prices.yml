@@ -1,0 +1,91 @@
+# Keeps the committed price snapshot current.
+#
+# WHY THIS EXISTS: the app makes no third-party request when a visitor opens it.
+# Prices are read from src/data/price-snapshot.json, which ships inside the
+# bundle. That keeps every visitor's IP out of IKEA's logs and makes the page
+# work with the endpoint down — but it means the snapshot only stays accurate if
+# something refreshes it. This is that something.
+#
+# A commit here lands on the default branch, but that is NOT enough to publish it:
+# GitHub suppresses workflow triggers for pushes made with GITHUB_TOKEN, so the
+# resulting `push` event does not start deploy-pages.yml and the new prices would
+# sit in the repo, never reaching the site. `workflow_dispatch` is one of the two
+# events exempt from that rule, so the last step below dispatches the deploy
+# explicitly. That is why this job needs `actions: write` as well as
+# `contents: write`.
+#
+# FAILURE POLICY: IKEA being unreachable is NOT a failure. refresh-prices.ts
+# leaves the existing snapshot in place and exits 0, and this workflow then has
+# nothing to commit. It also refuses to write a snapshot with fewer prices than
+# the one on disk, so a throttled or partial response cannot quietly wipe out
+# prices for every visitor. Contract drift (fields disappearing upstream) is a
+# separate concern and belongs to verify-api.yml, which is allowed to go red.
+
+name: Refresh prices
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    # Weekly, Monday 05:00 UTC — an hour before the verify-api canary, so if
+    # both are going to say something, the refresh speaks first.
+    - cron: '0 5 * * 1'
+
+# Serialise: two runs rewriting the same file would conflict on push.
+concurrency:
+  group: refresh-prices
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  # To dispatch deploy-pages.yml after committing — see the header.
+  actions: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # No lockfile-locked `npm ci` here: the project's package-lock.json is
+      # not guaranteed current for a clean install, so we use `npm install`.
+      - name: Install dependencies
+        run: npm install
+
+      - name: Refresh the price snapshot
+        run: npm run refresh-prices
+
+      # The snapshot is the only file this workflow is ever allowed to change.
+      # Scoping the commit to that path means a compromised or buggy step
+      # cannot smuggle anything else onto the default branch.
+      - name: Commit the snapshot if it changed
+        id: commit
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- src/data/price-snapshot.json; then
+            echo "snapshot unchanged — nothing to commit"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/data/price-snapshot.json
+          git commit -m "Refresh IKEA price snapshot
+
+          Automated by .github/workflows/refresh-prices.yml."
+          git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      # The push above cannot start deploy-pages.yml on its own (header). Without
+      # this the snapshot would be committed and never published — the failure
+      # mode is silent, because everything else in this workflow goes green.
+      - name: Publish the new prices
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run deploy-pages.yml --ref "$GITHUB_REF_NAME"

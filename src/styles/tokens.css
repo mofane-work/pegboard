@@ -1,0 +1,99 @@
+/*
+ * Theme tokens.
+ *
+ * Rule: every color has its ONE canonical definition in the light palette
+ * on bare :root. The dark variants (system-preference and explicit toggle)
+ * only ever *redefine* the tokens that actually change for dark mode —
+ * never introduce a token that doesn't already exist above.
+ */
+
+:root {
+  /* Core palette (light) */
+  --color-background: #f7f7f5;
+  --color-surface: #ffffff;
+  --color-surface-raised: #ffffff;
+  --color-border: #e0e0dc;
+  --color-text: #1a1a18;
+  --color-text-muted: #6b6b66;
+  --color-accent: #0d6efd;
+  --color-accent-contrast: #ffffff;
+  --color-danger: #d92d20;
+  --color-success: #16a34a;
+
+  /* 3D scene tokens */
+  --scene-bg: #eceae4;
+  --board-color: #d8d3c4;
+  --accessory-color: #f5a623;
+  --snap-ok: #16a34a;
+  --snap-bad: #d92d20;
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-8: 3rem;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+
+  /* Typography */
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+  --font-size-sm: 0.875rem;
+  --font-size-md: 1rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.75rem;
+
+  /* Motion */
+  --transition: 150ms ease;
+}
+
+/* System preference: applies only when the user hasn't made an explicit
+   choice (no data-theme="light" override present). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-background: #16171a;
+    --color-surface: #1e2024;
+    --color-surface-raised: #26282d;
+    --color-border: #34363c;
+    --color-text: #f0f0ee;
+    --color-text-muted: #9a9ca3;
+    --color-accent: #4c9aff;
+    --color-accent-contrast: #0b1220;
+    --color-danger: #f97066;
+    --color-success: #4ade80;
+
+    --scene-bg: #101114;
+    --board-color: #3a3d44;
+    --accessory-color: #f5a623;
+    --snap-ok: #4ade80;
+    --snap-bad: #f97066;
+  }
+}
+
+/* Explicit toggle always wins, in both directions. */
+:root[data-theme='dark'] {
+  --color-background: #16171a;
+  --color-surface: #1e2024;
+  --color-surface-raised: #26282d;
+  --color-border: #34363c;
+  --color-text: #f0f0ee;
+  --color-text-muted: #9a9ca3;
+  --color-accent: #4c9aff;
+  --color-accent-contrast: #0b1220;
+  --color-danger: #f97066;
+  --color-success: #4ade80;
+
+  --scene-bg: #101114;
+  --board-color: #3a3d44;
+  --accessory-color: #f5a623;
+  --snap-ok: #4ade80;
+  --snap-bad: #f97066;
+}

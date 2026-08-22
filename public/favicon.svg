@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Pegboard">
+  <!--
+    A SKÅDIS panel, the same mark as the boot splash in index.html: a rounded
+    board with slots on the 40 mm lattice. Six slots, not the splash's nine —
+    at 16 px a 3×3 grid turns to mush.
+
+    Colours are hand-written hexes rather than tokens for the same reason the
+    splash's are: tokens.css cannot reach a favicon. They mirror the light and
+    dark palettes, and are kept in step with #boot in index.html by hand.
+  -->
+  <style>
+    .board { fill: #0d6efd; }
+    .slot  { fill: #f7f7f5; }
+    @media (prefers-color-scheme: dark) {
+      .board { fill: #4c9aff; }
+      .slot  { fill: #16171a; }
+    }
+  </style>
+  <rect class="board" x="2" y="2" width="28" height="28" rx="5" />
+  <g class="slot">
+    <rect x="6.5" y="7" width="4" height="8" rx="2" />
+    <rect x="14" y="7" width="4" height="8" rx="2" />
+    <rect x="21.5" y="7" width="4" height="8" rx="2" />
+    <rect x="6.5" y="17" width="4" height="8" rx="2" />
+    <rect x="14" y="17" width="4" height="8" rx="2" />
+    <rect x="21.5" y="17" width="4" height="8" rx="2" />
+  </g>
+</svg>

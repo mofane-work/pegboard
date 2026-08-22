@@ -1,0 +1,45 @@
+name: Feature request
+description: Suggest something the planner should do.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Two requests are common enough to have their own paths below — please
+        use them, they are much faster to act on than free text.
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of request is this?
+      options:
+        - Add a price market (a country the planner cannot price yet)
+        - Add a SKÅDIS part that is missing from the catalog
+        - Something else
+    validations:
+      required: true
+
+  - type: textarea
+    id: detail
+    attributes:
+      label: The request
+      description: |
+        **Adding a market:** name the country and paste a link to the SKÅDIS
+        section of that country's IKEA site. Note that some markets (Taiwan,
+        Hong Kong) run on a separate platform we cannot read at all — for those
+        the answer is the per-item price override, which already works today.
+
+        **Adding a part:** paste the product page link and its article number.
+        We need real published dimensions; we do not guess them.
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: What are you trying to do?
+      description: >
+        The problem behind the request. Often there is already a way to do it,
+        or a better fix than the one being asked for.
+    validations:
+      required: false

@@ -1,0 +1,42 @@
+name: CI
+
+# Runs on every push and pull request. Keeps typecheck / lint / test / build as
+# separate steps so a failure names itself instead of hiding inside one blob.
+#
+# Deliberately does NOT run `verify-api` here: that script hits a live,
+# undocumented third-party (IKEA) endpoint and would make this workflow flaky
+# on transient upstream issues. It runs on its own schedule instead — see
+# verify-api.yml.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # No lockfile-locked `npm ci` here: the project's package-lock.json is
+      # not guaranteed current for a clean install, so we use `npm install`.
+      - name: Install dependencies
+        run: npm install
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build

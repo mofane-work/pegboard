@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pegboard | IKEA SKÅDIS wall planner</title>
+
+    <!--
+      The favicon is a static file in public/, referenced root-absolutely so
+      Vite rewrites it against `base` — on Pages the site is served from a
+      /<repo>/ subpath, and a browser's implicit /favicon.ico request would
+      resolve against the origin instead and 404.
+
+      theme-color starts at the light background and is then kept in step by
+      applyTheme(), which reads --color-background. Two prefers-color-scheme
+      variants would follow the OS only, so an in-app Dark choice on a light
+      machine would leave the browser chrome light.
+    -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#f7f7f5" />
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('theme');
+          // 'system' is stored only when the visitor picks it, and it is the one
+          // value that must stamp nothing so the CSS media query can win.
+          if (stored === 'light' || stored === 'dark') {
+            document.documentElement.dataset.theme = stored;
+          } else if (stored !== 'system') {
+            // No choice made yet: light, matching the store's default. Stamping
+            // nothing here would let a dark OS paint the splash dark and then
+            // flip to light the moment React applies the real preference.
+            document.documentElement.dataset.theme = 'light';
+          }
+        } catch (e) {
+          /* localStorage unavailable; fall back to system preference via CSS */
+        }
+      })();
+    </script>
+
+    <!--
+      Boot splash. Deliberately inline: nothing paints until the bundle, React,
+      i18n and the store rehydration have all resolved, so a React loading state
+      cannot render before React does (findings F25f).
+
+      Two rules it has to keep:
+        * No words. i18n has not loaded; guessing a language and then correcting
+          it reads worse than a wordless mark.
+        * Its own colours. tokens.css arrives with the bundle, so custom
+          properties are not available yet — these hexes mirror the light and
+          dark palettes by hand, keyed off the same data-theme the script above
+          has already stamped. Getting this wrong flashes white before a dark app.
+    -->
+    <style>
+      #boot {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f7f7f5;
+        transition: opacity 200ms ease;
+      }
+      #boot[data-done] {
+        opacity: 0;
+        pointer-events: none;
+      }
+      #boot svg {
+        width: 84px;
+        height: 84px;
+      }
+      /* The board outline: steady. The slots fill in one after another. */
+      #boot .boot-board {
+        fill: none;
+        stroke: #6b6b66;
+        stroke-width: 3;
+        opacity: 0.35;
+      }
+      #boot .boot-slot {
+        fill: #0d6efd;
+        opacity: 0.15;
+        animation: boot-pulse 1.6s ease-in-out infinite;
+      }
+      #boot .boot-slot:nth-child(3n + 3) { animation-delay: 0.2s; }
+      #boot .boot-slot:nth-child(3n + 4) { animation-delay: 0.4s; }
+      @keyframes boot-pulse {
+        0%, 100% { opacity: 0.15; }
+        50% { opacity: 1; }
+      }
+
+      #boot noscript {
+        max-width: 28rem;
+        padding: 0 1.5rem;
+        color: #1a1a18;
+        font:
+          1rem/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          Helvetica, Arial, sans-serif;
+        text-align: center;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme='light']) #boot { background: #16171a; }
+        :root:not([data-theme='light']) #boot .boot-board { stroke: #9a9ca3; }
+        :root:not([data-theme='light']) #boot .boot-slot { fill: #4c9aff; }
+        :root:not([data-theme='light']) #boot noscript { color: #f0f0ee; }
+      }
+      :root[data-theme='dark'] #boot { background: #16171a; }
+      :root[data-theme='dark'] #boot .boot-board { stroke: #9a9ca3; }
+      :root[data-theme='dark'] #boot .boot-slot { fill: #4c9aff; }
+      :root[data-theme='dark'] #boot noscript { color: #f0f0ee; }
+
+      @media (prefers-reduced-motion: reduce) {
+        #boot { transition: none; }
+        #boot .boot-slot { animation: none; opacity: 0.5; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="boot">
+      <!-- A SKÅDIS panel: rounded board, nine slots on the 40 mm lattice. -->
+      <svg viewBox="0 0 84 84" role="img" aria-label="Loading" aria-busy="true">
+        <rect class="boot-board" x="4" y="4" width="76" height="76" rx="8" />
+        <rect class="boot-slot" x="22" y="18" width="6" height="16" rx="3" />
+        <rect class="boot-slot" x="39" y="18" width="6" height="16" rx="3" />
+        <rect class="boot-slot" x="56" y="18" width="6" height="16" rx="3" />
+        <rect class="boot-slot" x="22" y="34" width="6" height="16" rx="3" />
+        <rect class="boot-slot" x="39" y="34" width="6" height="16" rx="3" />
+        <rect class="boot-slot" x="56" y="34" width="6" height="16" rx="3" />
+        <rect class="boot-slot" x="22" y="50" width="6" height="16" rx="3" />
+        <rect class="boot-slot" x="39" y="50" width="6" height="16" rx="3" />
+        <rect class="boot-slot" x="56" y="50" width="6" height="16" rx="3" />
+      </svg>
+      <noscript>
+        This pegboard planner draws your wall in 3D in the browser, so it needs
+        JavaScript enabled. There is no server side to fall back to.
+      </noscript>
+    </div>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

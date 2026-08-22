@@ -1,0 +1,82 @@
+# Keeps the visit-count badge on the README current.
+#
+# WHY THIS EXISTS: counter.dev publishes no badge and no unauthenticated count
+# endpoint. Reading the number requires the dashboard share token, and a token
+# in a README URL is a published token. So the token lives in Actions secrets,
+# this workflow reads the count server-side, and only the number is committed.
+#
+# FAILURE POLICY, same as refresh-prices.yml: counter.dev being unreachable is
+# NOT a failure. refresh-visit-count.ts leaves the committed number in place and
+# exits 0, and this workflow then has nothing to commit. It also refuses to
+# write a count lower than the one on disk — visits are cumulative, so a smaller
+# number means a partial response, and a public badge counting backwards is
+# worse than one that is a week stale.
+#
+# SETUP (all three are placeholders until you do this):
+#   Settings → Secrets and variables → Actions
+#     Secret   COUNTER_DEV_USER   — your counter.dev username
+#     Secret   COUNTER_DEV_TOKEN  — Dashboard → share/API token
+#     Variable COUNTER_DEV_ID     — the site token the tracker script uses
+#                                   (read by deploy-pages.yml, not by this file)
+#     Variable COUNTER_DEV_SITE   — optional; one site key to count instead of
+#                                   summing every site on the account
+# Until COUNTER_DEV_USER/TOKEN exist the scheduled run fails fast and loudly on
+# the missing-credentials check, which is the intended signal, not a bug.
+
+name: Refresh visit count
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    # Daily, 04:00 UTC — an hour before the Monday price refresh, so the two
+    # never race for the same push.
+    - cron: '0 4 * * *'
+
+# Serialise: two runs rewriting the same file would conflict on push.
+concurrency:
+  group: refresh-visit-count
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # The script has no imports outside node: builtins, so there is nothing
+      # to install. Skipping npm here keeps a daily job to a few seconds.
+      - name: Refresh the visit count
+        env:
+          COUNTER_DEV_USER: ${{ secrets.COUNTER_DEV_USER }}
+          COUNTER_DEV_TOKEN: ${{ secrets.COUNTER_DEV_TOKEN }}
+          # Optional, and empty unless the variable exists — an unset variable
+          # expands to '', which the script treats as "sum every site".
+          COUNTER_DEV_SITE: ${{ vars.COUNTER_DEV_SITE }}
+        run: npm run refresh-visit-count
+
+      # The badge file is the only file this workflow is ever allowed to change.
+      # Scoping the commit to that path means a compromised or buggy step cannot
+      # smuggle anything else onto the default branch.
+      - name: Commit the count if it changed
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- .github/badges/visits.json; then
+            echo "count unchanged — nothing to commit"
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/badges/visits.json
+          git commit -m "Refresh visit count badge
+
+          Automated by .github/workflows/refresh-visit-count.yml."
+          git push

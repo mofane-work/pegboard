@@ -1,0 +1,37 @@
+# Scheduled canary for IKEA's undocumented search/price endpoint.
+#
+# IMPORTANT: a failure in this workflow does NOT mean the app is broken.
+# Pricing degrades through a resolution chain (override -> live -> cache ->
+# bundled snapshot -> unknown), so the site keeps working off the committed
+# snapshot even if the upstream endpoint disappears entirely. A failure here
+# means the undocumented contract we depend on (fields like `salesPrice`,
+# `typeName`, `id`, ...) has changed or gone away upstream, prices will
+# gradually go stale, and the catalog / snapshot needs human attention.
+
+name: Verify API
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    # Weekly, Monday 06:00 UTC.
+    - cron: '0 6 * * 1'
+
+jobs:
+  verify-api:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # No lockfile-locked `npm ci` here: the project's package-lock.json is
+      # not guaranteed current for a clean install, so we use `npm install`.
+      - name: Install dependencies
+        run: npm install
+
+      - name: Verify IKEA price API contract
+        run: npm run verify-api

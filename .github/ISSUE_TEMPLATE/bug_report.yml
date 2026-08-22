@@ -1,0 +1,82 @@
+name: Bug report
+description: Something in the planner does not work.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. The single most useful thing you can give us
+        is the **share link** — it encodes your whole wall, so we can open
+        exactly what you were looking at.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what you got instead.
+      placeholder: |
+        1. Dragged a large hook onto the 76×56 board
+        2. Expected it to snap to the slot under the cursor
+        3. It jumped two slots to the left
+    validations:
+      required: true
+
+  - type: input
+    id: share-link
+    attributes:
+      label: Share link
+      description: >
+        Press "Share link" in the top bar and paste it here. It contains only your
+        configuration — no personal data — and it reproduces the exact wall.
+        Custom placeholder parts are not included in a share link, so mention
+        them below if they matter.
+      placeholder: https://…/#c=…
+    validations:
+      required: false
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and OS
+      placeholder: Firefox 142 on Windows 11 / Safari on iPhone 15
+    validations:
+      required: true
+
+  - type: dropdown
+    id: market
+    attributes:
+      label: Price market
+      description: The "Prices from" selector in the top bar.
+      options:
+        - United States
+        - United Kingdom
+        - Germany
+        - France
+        - Japan
+        - Custom prices
+        - Not relevant to this bug
+    validations:
+      required: true
+
+  - type: dropdown
+    id: language
+    attributes:
+      label: Interface language
+      options:
+        - English
+        - 日本語
+        - 繁體中文
+        - Not relevant to this bug
+    validations:
+      required: true
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Console errors
+      description: >
+        Optional, but decisive for anything involving the 3D view. Open the
+        browser's developer tools, reload, and paste anything red.
+      render: text
+    validations:
+      required: false

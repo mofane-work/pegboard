@@ -1,0 +1,90 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    # This repo's default branch is `main`; `master` stays accepted so a fork
+    # that kept the older name still deploys on its first push.
+    branches: [main, master]
+    # The visit-count badge is README furniture, not site content. Without this,
+    # the daily refresh-visit-count commit would redeploy Pages every morning
+    # for a number that never reaches the bundle.
+    paths-ignore:
+      - '.github/badges/**'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one Pages deployment at a time; cancel any in-flight run when a newer
+# one starts.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # No lockfile-locked `npm ci` here: the project's package-lock.json is
+      # not guaranteed current for a clean install, so we use `npm install`.
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build
+        env:
+          # GitHub Pages project sites are served from /<repo>/, not /.
+          BASE_PATH: /${{ github.event.repository.name }}/
+          # counter.dev site token. A repository VARIABLE, not a secret: it ends
+          # up in the shipped bundle where anyone can read it, so pretending it
+          # is confidential would only make it harder to rotate. While the
+          # variable is unset the build ships no tracker at all and the Help
+          # panel says so — see src/lib/analytics.ts.
+          VITE_COUNTER_DEV_ID: ${{ vars.COUNTER_DEV_ID }}
+          # Optional "buy me a coffee" link, also a repository VARIABLE — it is
+          # a public URL meant to be clicked, nothing confidential. Unset means
+          # the footer simply renders no link, which is the default. Unlike the
+          # token above this may equally well be hardcoded in src/data/
+          # support.ts; the variable exists so a Pages deploy can carry it
+          # without the URL being in the source a fork inherits.
+          VITE_BMC_URL: ${{ vars.BMC_URL }}
+        run: npm run build
+
+      # Harmless today, and sets up client-side routing (if this project ever
+      # adds any) to keep working on Pages, where unknown paths 404 by default.
+      - name: Copy index.html to 404.html for SPA routing
+        run: cp dist/index.html dist/404.html
+
+      # Pages runs files through Jekyll by default, which ignores/mangles
+      # paths starting with underscores (e.g. hashed asset chunks). This
+      # opts out.
+      - name: Disable Jekyll processing
+        run: touch dist/.nojekyll
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
