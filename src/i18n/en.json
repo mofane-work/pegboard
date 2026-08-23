@@ -48,7 +48,11 @@
     "rotate": "Press R to rotate",
     "custom": "Custom parts",
     "customHint": "Your own placeholders — never costed, never shared",
-    "customAdd": "+ New custom part"
+    "customAdd": "+ New custom part",
+    "place": "Place on board",
+    "allowOverlap": "Allow items to overlap",
+    "allowOverlapHint": "Lets you move an item past its neighbours. Pegs still have to land in real slots.",
+    "noRoom": "No room on the board. Move something, add a board, or tick Allow items to overlap."
   },
   "custom": {
     "newTitle": "New custom part",
@@ -140,7 +144,11 @@
     "countMe": "Count my visit",
     "aboutTitle": "About this project",
     "a1": "Free and open source, under the MIT licence.",
-    "a2": "Source, issues and contributions on GitHub ↗"
+    "a2": "Source, issues and contributions on GitHub ↗",
+    "b8": "On a touch screen, tap a placed item to select it — arrows, rotate and delete appear over the 3D view.",
+    "s8": "Arrow keys — move the selected item one hole at a time",
+    "b9": "Tap + beside any accessory to drop it on the board without dragging, then move it with the arrows.",
+    "b10": "Allow items to overlap lets you move something past its neighbours. Pegs still have to land in real slots, and it is never carried in a share link."
   },
   "list": {
     "title": "Procurement list",
@@ -168,6 +176,13 @@
     "iso": "Isometric"
   },
   "scene": {
-    "orbitHint": "Drag to orbit · scroll to zoom"
+    "orbitHint": "Drag to orbit · scroll to zoom",
+    "controls": "Selected item",
+    "moveLeft": "Move left",
+    "moveRight": "Move right",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "rotate": "Rotate",
+    "remove": "Remove item"
   }
 }

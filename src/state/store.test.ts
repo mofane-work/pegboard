@@ -31,6 +31,18 @@ describe('migrateConfig', () => {
     expect(out.viewHeight).toBe(1.2)
   })
 
+  it('gives a v9 configuration the strict placement rules it was built under', () => {
+    // Off is what every wall saved before v10 was built with, so an existing
+    // configuration must not reopen with collision quietly switched off.
+    const out = migrateConfig({ boards: [], placements: [], viewHeight: 0.4 }, 9)
+    expect(out.allowOverlap).toBe(false)
+  })
+
+  it('does not overwrite an overlap choice that is already stored', () => {
+    const out = migrateConfig({ allowOverlap: true, boards: [], placements: [] }, 9)
+    expect(out.allowOverlap).toBe(true)
+  })
+
   it('carries a v1 configuration all the way forward in one pass', () => {
     // Four versions behind: every step has to run, in order, and no step may
     // assume a later one already happened.
@@ -49,6 +61,7 @@ describe('migrateConfig', () => {
     expect(out.customParts).toEqual([]) // v7
     expect(out.boards[0].rotated).toBe(false) // v8
     expect(out.viewHeight).toBe(0.4) // v9
+    expect(out.allowOverlap).toBe(false) // v10
     expect('boardKey' in out).toBe(false)
   })
 
@@ -60,7 +73,8 @@ describe('migrateConfig', () => {
       viewHeight: 0.9,
       printAngle: 'front' as const,
       customParts: [],
+      allowOverlap: false,
     }
-    expect(migrateConfig(structuredClone(current), 9)).toEqual(current)
+    expect(migrateConfig(structuredClone(current), 10)).toEqual(current)
   })
 })

@@ -32,19 +32,13 @@ afterEach(() => {
 })
 
 describe('resolveCounterDevId', () => {
-  // These pin BOTH sources, so they hold in a fork that fills in
-  // CONFIGURED_ID as much as in the unconfigured build this repo ships.
-  it('resolves to nothing when neither source has a token', () => {
-    expect(resolveCounterDevId('', '')).toBe('')
-    expect(resolveCounterDevId(undefined, '')).toBe('')
+  it('takes a well-formed token from the environment', () => {
+    expect(resolveCounterDevId(VALID_ID)).toBe(VALID_ID)
   })
 
-  it('lets the environment override a hardcoded constant', () => {
-    expect(resolveCounterDevId(VALID_ID, 'hardcoded-id')).toBe(VALID_ID)
-  })
-
-  it('falls back to the hardcoded constant when the environment is empty', () => {
-    expect(resolveCounterDevId('', 'hardcoded-id')).toBe('hardcoded-id')
+  it('resolves to nothing when the environment has no token', () => {
+    expect(resolveCounterDevId('')).toBe('')
+    expect(resolveCounterDevId(undefined)).toBe('')
   })
 
   it.each([
@@ -52,9 +46,8 @@ describe('resolveCounterDevId', () => {
     ['a value with whitespace', 'abc 123'],
     ['a value that is too short', 'ab'],
     ['an outright URL', 'https://evil.example/x'],
-  ])('rejects %s from either source', (_label, value) => {
-    expect(resolveCounterDevId(value, '')).toBe('')
-    expect(resolveCounterDevId('', value)).toBe('')
+  ])('rejects %s', (_label, value) => {
+    expect(resolveCounterDevId(value)).toBe('')
   })
 })
 
@@ -65,27 +58,26 @@ describe('counterDevId', () => {
     expect(analyticsConfigured()).toBe(true)
   })
 
-  // Deliberately not asserting a value: this repo ships CONFIGURED_ID empty,
-  // but a deployment that fills it in is a supported configuration and must
-  // not turn its own test suite red. The invariant is that the two agree.
-  it('agrees with analyticsConfigured about this build, whatever it is', () => {
+  // The whole fork story rests on this: the build env is the ONLY source, so
+  // a checkout with nothing exported counts nothing. If someone reintroduces a
+  // hardcoded fallback constant, this is the test that goes red.
+  it('has no source but the environment, so an unset build is unconfigured', () => {
     vi.stubEnv('VITE_COUNTER_DEV_ID', '')
-    expect(analyticsConfigured()).toBe(counterDevId() !== '')
+    expect(counterDevId()).toBe('')
+    expect(analyticsConfigured()).toBe(false)
   })
 })
 
 describe('initAnalytics', () => {
   it('injects nothing when no token is configured', () => {
-    // Passed explicitly rather than leaning on the ambient build: with a
-    // hardcoded CONFIGURED_ID there is no other way to reach this gate.
     expect(initAnalytics('')).toBe(false)
     expect(injectedScripts()).toHaveLength(0)
   })
 
-  it('follows the build configuration when called with no argument', () => {
+  it('injects nothing when called with no argument and the env is unset', () => {
     vi.stubEnv('VITE_COUNTER_DEV_ID', '')
-    expect(initAnalytics()).toBe(analyticsConfigured())
-    expect(injectedScripts()).toHaveLength(analyticsConfigured() ? 1 : 0)
+    expect(initAnalytics()).toBe(false)
+    expect(injectedScripts()).toHaveLength(0)
   })
 
   it('injects the tracker when configured', () => {

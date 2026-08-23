@@ -6,9 +6,11 @@ import { CostTable } from './components/CostTable'
 import { Help } from './components/Help'
 import { CustomPartForm } from './components/CustomPartForm'
 import { Scene } from './components/Scene'
+import { SelectionControls } from './components/SelectionControls'
 import { isPlaceable } from './data/catalog'
 import { catalogWithCustom, isCustomKey, type CustomPart } from './data/customParts'
 import { unresolvablePlacementIds } from './lib/placements'
+import { nudgePlacement, type NudgeDirection } from './lib/nudge'
 import { buildWall, layoutBoards, occupiedRects, snapOnWall, wallSize } from './lib/wall'
 import { copyText } from './lib/clipboard'
 import { buildShareUrl, readSharedConfig } from './lib/shareLink'
@@ -27,6 +29,14 @@ import './styles/app.css'
  */
 const SHARE_FEEDBACK_MS = 2500
 
+/** Arrow keys to nudge directions. Board space has +y up, so ArrowUp is `up`. */
+const ARROW_KEYS: Record<string, NudgeDirection | undefined> = {
+  ArrowLeft: 'left',
+  ArrowRight: 'right',
+  ArrowUp: 'up',
+  ArrowDown: 'down',
+}
+
 function App() {
   const { t, i18n } = useTranslation()
   const boards = useConfig((s) => s.boards)
@@ -35,6 +45,8 @@ function App() {
   const selectedId = useConfig((s) => s.selectedId)
   const remove = useConfig((s) => s.remove)
   const rotate = useConfig((s) => s.rotate)
+  const move = useConfig((s) => s.move)
+  const allowOverlap = useConfig((s) => s.allowOverlap)
   const place = useConfig((s) => s.place)
   const placements = useConfig((s) => s.placements)
   const customParts = useConfig((s) => s.customParts)
@@ -177,10 +189,28 @@ function App() {
         if (draggingKey) rotateDrag()
         else if (selectedId) rotate(selectedId)
       }
+      // The same nudge the on-canvas arrows use. Desktop had no way to move an
+      // item except a drag either, so this is not only a touch feature.
+      const direction = ARROW_KEYS[event.key]
+      if (direction && selectedId) {
+        // Claimed unconditionally: an arrow with something selected must never
+        // also scroll the page out from under the board.
+        event.preventDefault()
+        const state = useConfig.getState()
+        const target = nudgePlacement(
+          buildWall(layoutBoards(state.boards)),
+          state.placements,
+          selectedId,
+          direction,
+          catalogWithCustom(state.customParts),
+          state.allowOverlap,
+        )
+        if (target) move(selectedId, target.holeId, target.rotation, target.boardIndex)
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [selectedId, remove, rotate, rotateDrag, draggingKey, undo, redo])
+  }, [selectedId, remove, rotate, rotateDrag, draggingKey, undo, redo, move])
 
   const wall = buildWall(layoutBoards(boards))
 
@@ -215,23 +245,46 @@ function App() {
   }
 
   /**
-   * Keyboard placement: drop the item at the middle of the board, sliding to
-   * the nearest free slot. Same snapping the pointer uses, so the two paths
+   * Place without dragging: drop the item at the middle of the board, sliding
+   * to the nearest free slot. Same snapping the pointer uses, so the two paths
    * cannot disagree about what is a legal position.
+   *
+   * Reached from the palette's + button and from Enter/Space on a palette item.
+   * On a phone it is the *only* way in: the stage sits above the palette there,
+   * so dragging to the board is a vertical gesture and vertical belongs to the
+   * page's scroll (findings F34b).
+   *
+   * @returns whether anything was placed, so a full board can say so instead of
+   *          looking like a dead button.
    */
-  function quickPlace(itemKey: string) {
+  function quickPlace(itemKey: string): boolean {
     const item = byKey.get(itemKey)
-    if (!item || !isPlaceable(item)) return
+    if (!item || !isPlaceable(item)) return false
 
     const size = wallSize(boards)
-    const snap = snapOnWall(
+    const centreX = size.widthMm / 2
+    const centreY = size.heightMm / 2
+
+    // Free space first, EVEN IN OVERLAP MODE. Overlap exists so a placed item
+    // can be moved past its neighbours; if it also governed placement, every
+    // press of + would drop another item on the same centre hole and they would
+    // stack invisibly. Prefer a free slot, and only fall back to overlapping
+    // when the board genuinely has none.
+    const free = snapOnWall(
       wall,
       item.pattern,
-      size.widthMm / 2,
-      size.heightMm / 2,
+      centreX,
+      centreY,
       occupiedRects(wall, placements),
     )
-    if (snap?.result.ok) place(itemKey, snap.result.anchor.id, 0, snap.boardIndex)
+    const snap =
+      free?.result.ok || !allowOverlap
+        ? free
+        : snapOnWall(wall, item.pattern, centreX, centreY, [])
+
+    if (!snap?.result.ok) return false
+    place(itemKey, snap.result.anchor.id, 0, snap.boardIndex)
+    return true
   }
 
   return (
@@ -279,6 +332,7 @@ function App() {
               Reset view remounts the canvas, and the hint must not come back.
               Kept mounted and faded rather than unmounted, so there is a
               transition to see. Help already says this for screen readers. */}
+          <SelectionControls wall={wall} byKey={byKey} />
           <p
             className={orbited ? 'orbit-hint orbit-hint--gone' : 'orbit-hint'}
             aria-hidden="true"

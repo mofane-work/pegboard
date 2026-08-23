@@ -1149,3 +1149,170 @@ unconditionally, so a week where IKEA's prices held steady still deploys nothing
 is README furniture, and `deploy-pages.yml` explicitly `paths-ignore`s `.github/badges/**`
 so the badge never redeploys the site (F27's note above). The suppression rule is doing the
 right thing there by accident, but the `paths-ignore` is what actually guarantees it.
+
+## F33 — Research for touch controls on the 3D pane (2026-08-23)
+
+Read of the existing code before designing anything. Everything below is from this
+repository, not from outside sources.
+
+**F33a — selection, rotate and delete already exist; only movement is missing.**
+`ConfigState` already carries `selectedId` with `select(id)`, and `Scene.tsx` already sets it
+from `onPointerDown` on a placed mesh and clears it via the Canvas's
+`onPointerMissed={() => select(null)}`. `AccessoryMesh` already takes a `selected` prop and
+renders differently. The store already exposes `rotate(id)` and `remove(id)`, both routed
+through `remember()` so both are undoable. `App.tsx`'s `keydown` handler already binds
+`R` → rotate and `Delete`/`Backspace` → remove **against `selectedId`**.
+
+So the touch gap is narrower than it looks: rotate and delete need a *button*, not a
+feature. Arrow movement is the only new behaviour, and there is no keyboard equivalent
+today either — adding one is a free side effect worth taking.
+
+**F33b — a nudge should be exact, not a re-snap.** The tempting implementation is "take the
+body centre, add 40 mm, call `snapOnWall`". It is wrong. `snapPlacement` returns the nearest
+*valid* hole to the target, so when the intended neighbour is occupied it silently slides to
+some other hole the same distance away — a nudge that moves the item sideways when you press
+up. Holes carry `col`/`row` and ids are `holeId(lattice, col, row)`, so the exact neighbour is
+a map lookup: `byId.get(holeId(anchor.lattice, col + dc, row + dr))`. Then `evaluatePlacement`
+decides. Miss = do nothing. Predictable beats clever here.
+
+**F33c — one lattice step is one `col`/`row` step, and that is already parity-correct.**
+Both lattices have 40 mm pitch, so a ±1 step in `col`/`row` stays on the same lattice by
+construction. This sidesteps the whole A/B problem: a nudge cannot land a multi-peg accessory
+on a mixed-lattice position because it never changes lattice. Rotation is a separate axis and
+`rotate()` already handles it.
+
+**F33d — board hopping needs the wall-space fallback, and only there.** Hole ids are
+board-relative, so `col ± 1` cannot cross the 8 mm seam between boards. A wall can hold up to
+three (`MAX_BOARDS`), so a nudge that dead-ends at a seam would read as broken. Fallback: when
+the neighbour id does not exist on this board, convert the intended point to wall space and
+call `snapOnWall`, accepting the result **only if** its anchor is within half a pitch of where
+we aimed. That keeps F33b's predictability while letting the item cross.
+
+**F33e — the overlay must be DOM, not in-scene.** `.layout__stage` is already
+`position: relative`, and `.orbit-hint` is existing precedent for an absolutely-positioned
+overlay in it. Real `<button>`s give focus, `aria-label`, theme tokens and 44 px hit targets
+for free, and cost the render loop nothing. drei's `Html` would inject the same DOM but
+through the scene graph, and a sprite would have to fight `OrbitControls` for the same
+pointer. Fixed cluster, not one that follows the object: screen-space tracking would need a
+3D→2D projection every frame and would move under the user's thumb as the camera orbits.
+
+**F33f — RISK, must be tested first: `onPointerMissed` may deselect on every button press.**
+`Scene.tsx` clears the selection from the Canvas's `onPointerMissed`. If R3F's listener sits
+on the container rather than the canvas element, a pointerdown on an overlay button that is a
+DOM sibling *inside* that container could clear `selectedId` — which would make every control
+in the cluster a one-shot that disables itself. This decides the DOM structure (sibling of
+`<Canvas>` vs. outside the R3F container), so it has to be settled before any code is
+written, not after.
+
+**F33f-resolved — it is safe, for two independent reasons.** Read of
+`@react-three/fiber@9.7.0` (`events-156d8d12.esm.js`, `react-three-fiber.esm.js`):
+
+1. `onPointerMissed` fires **only for click-type events** (`onClick` / `onContextMenu` /
+   `onDoubleClick`) that hit nothing, and only when the pointer moved 2 px or less. It does
+   not fire on `pointerdown` at all.
+2. `<Canvas>` renders its own two nested `<div>`s around the `<canvas>`, and R3F attaches its
+   listeners to the inner container — "events to the target's parent ... not on the canvas
+   itself", per its own comment. A DOM sibling of `<Canvas>` inside `.layout__stage` is
+   therefore outside R3F's listener subtree entirely, and its clicks never reach the handler.
+
+So the overlay goes where `.orbit-hint` already goes: a sibling of `<Canvas>`, not a child.
+No `stopPropagation` gymnastics needed. Worth keeping the structural rule in mind though — an
+overlay moved *inside* `<Canvas>` (e.g. via drei `Html`) would land inside that subtree and
+the deselect-on-tap bug would appear, which is the failure this note exists to prevent.
+
+Second detail from the same read: the `style` prop passed to `<Canvas>` lands on the **outer
+wrapper div**, not on the `<canvas>` element — so `touchAction: 'none'` is set on the wrapper,
+and `.layout__stage canvas { touch-action: none }` in `app.css` is what covers the element.
+The overlay is a sibling of that wrapper and inherits neither.
+
+**F33g — collision data must exclude the item being nudged.** `occupiedRects(wall, placements,
+excludeId)` already takes an exclusion argument, used today for `dragMovingId`. A nudge must
+pass the selected id, or the item collides with the rect it is currently standing in and every
+nudge fails.
+
+**F33h — what a nudge costs in undo.** `move`/`rotate`/`remove` each push a snapshot and
+`HISTORY_LIMIT` is 50. Ten taps of an arrow is ten undo steps, so a user who nudges across a
+board loses the rest of their history. Worth deciding deliberately rather than discovering:
+either accept it, or coalesce consecutive nudges of the same placement into one history entry.
+
+**F33i — the overlay must live in `App.tsx`, not `Scene.tsx`, and the test suite is what
+decides it.** `App.test.tsx` does `vi.mock('./components/Scene', ...)` — the whole 3D
+component is replaced, because jsdom has no WebGL. Anything rendered inside `Scene.tsx` is
+therefore untestable at the app level. `.orbit-hint` already sits in `App.tsx` as a sibling
+of `<Scene>` inside `.layout__stage` for the unrelated reason that Reset view remounts the
+canvas; the same slot gives the new controls real coverage in the existing suite and means
+`Scene.tsx` is not edited at all, so the drag/snap path carries zero risk.
+
+**F33j — touch selection already works; only the verbs were missing.** Tapping a placed mesh
+fires `onPointerDown` → `select(id)` + `startMove(...)`. A tap that never moves leaves
+`hoverHoleId` null, so `handleDrop` falls through to `endDrag()` and commits nothing — the tap
+reads as a pure select. Tapping the background is a click that hits nothing, which is exactly
+what `onPointerMissed` wants. So no new selection mechanism is needed for touch.
+
+**F33k — no persisted-state change, so no store version bump.** A nudge is
+`move(id, holeId, rotation, boardIndex)`, which already exists and is already undoable.
+Rotate and delete already exist too. Nothing new is persisted, `Placement` keeps its shape,
+and `migrateConfig` is untouched — `version: 9` stands. This is the single biggest reason the
+change is low-risk: it adds a new way to call three existing, tested actions.
+
+## F34 — Why the palette is unusable on a phone (2026-08-23)
+
+Two complaints from real touch use, both traced to code rather than guessed at.
+
+**F34a — `touch-action: none` on `.palette__item` is what stops the page scrolling.**
+`app.css:353` sets it, which tells the browser "this element handles every touch gesture
+itself". It is there so a finger drag onto the board produces `pointermove` instead of a
+scroll. The cost is total: a finger that lands on a palette item can never scroll, and since
+the items are a dense list filling most of the pane, most of the pane is unscrollable.
+
+Worse on a phone than the desktop reasoning assumed. Under `@media (max-width: 900px)` the
+palette is `min-height: auto` and **the page** scrolls, not the pane — so the dead zone is not
+a pane that refuses to scroll, it is the whole document refusing to scroll while your finger
+is over the list.
+
+**F34b — and on a phone the drag it protects cannot work anyway.** The same media query sets
+`.layout__stage { order: -1 }`, putting the board *above* the palette. So dragging an
+accessory to the board is a drag upward — a vertical gesture, exactly the one that has to
+become a scroll if the page is to scroll at all. The two requirements are in direct conflict
+on a stacked layout, and `touch-action: none` resolves it in favour of a drag that is already
+awkward on a small screen.
+
+The resolution: `touch-action: pan-y`. The browser owns vertical panning, so the page scrolls;
+horizontal movement still produces pointer events, so drag survives wherever the board is
+*beside* the palette (desktop and landscape tablets). `touch-action` does not affect mouse
+input at all, so desktop is untouched. On a phone, dragging to the board is given up
+deliberately, and replaced by F34c.
+
+**F34c — the auto-place path already exists; it has no button.** `App.quickPlace(itemKey)`
+snaps the item to the middle of the wall and slides to the nearest free slot with the same
+`snapOnWall` the pointer uses, then calls `place()`. It is wired only to `Enter`/`Space` on a
+palette item, for keyboard users. Exposing it as a visible **+** is nearly free, and gives
+touch users a placement path that needs no drag at all.
+
+Two gaps to close while doing it:
+- It fails **silently** when nothing fits — `if (snap?.result.ok)` and no else. Fine as an
+  invisible keyboard affordance, not fine as a button someone taps twice and then wonders about.
+- The **+** must be a sibling button, not part of the draggable item, or its `pointerdown`
+  starts a drag. `.palette__custom-row` already has exactly that shape with its Edit button.
+
+**F34d — "allow overlap" is a persisted preference, so it costs a store version.** The
+occupancy check is what makes a nudge refuse, so an item can be walled in with no way to move
+it past a neighbour to where the user wants it. A permissive mode fixes that. It belongs with
+`theme` / `viewRatio` / `viewHeight` / `printAngle`: persisted, **not** shared, not undoable —
+a share link must never hand a recipient a relaxed rule set. Adding it means `version: 10`, a
+`migrateConfig` step, and a `store.test.ts` case, per the standing rule.
+
+It must relax **only body overlap**. Every peg still has to land in a real slot: that is
+physics, not policy, and `evaluatePlacement` treats the two separately already
+(`peg-off-board` vs `overlap`), so the split is free.
+
+And it has to apply to **every** placement path — nudge, drag and quick-place — or the rules
+differ by input device, which is the exact inconsistency `placements.ts` was written to end
+("Same question, one answer"). All three already compute an occupied list; the flag chooses
+between that list and an empty one.
+
+**F34e — the toggle goes in the Palette, not the Toolbar.** The toolbar's second row was the
+subject of F30 and F31 — it overflows below ~1022 px and was only just stabilised. Adding a
+control there without a browser to measure in would be re-opening a closed bug on a guess. The
+palette is a vertically scrolling pane with room to spare, and it is already where the
+placement rules are explained (`palette.hint`). Cheaper to move later than to unbreak a layout.

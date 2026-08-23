@@ -69,10 +69,17 @@ export function Scene({
     [placements, wall, byKey],
   )
 
-  /** Bounding boxes already taken, in wall space, excluding what is moving. */
+  /**
+   * Bounding boxes already taken, in wall space, excluding what is moving.
+   *
+   * Empty in overlap mode. The flag has to reach the drag path and not only the
+   * nudge, or the same wall accepts a position by one input device and refuses
+   * it by another — the inconsistency `placements.ts` exists to prevent.
+   */
+  const allowOverlap = useConfig((s) => s.allowOverlap)
   const occupied: Rect[] = useMemo(
-    () => occupiedRects(wall, placements, dragMovingId),
-    [wall, placements, dragMovingId],
+    () => (allowOverlap ? [] : occupiedRects(wall, placements, dragMovingId)),
+    [wall, placements, dragMovingId, allowOverlap],
   )
 
   const dragItem = dragItemKey ? byKey.get(dragItemKey) : undefined

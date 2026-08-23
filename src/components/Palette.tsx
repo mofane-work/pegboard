@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ACCESSORIES, isPlaceable } from '../data/catalog'
 import { MAX_CUSTOM_PARTS, type CustomPart } from '../data/customParts'
@@ -5,17 +6,27 @@ import { PITCH_MM } from '../lib/grid'
 import { useConfig } from '../state/store'
 import { useDrag } from '../state/drag'
 
+/** How long "no room" stays up. Long enough to read, short enough to retry. */
+const NO_ROOM_FEEDBACK_MS = 3500
+
 /**
  * Drag source for board accessories, plus an add/remove list for hardware and
  * bundles that belong in the cost total but cannot be placed on a board face,
  * plus the user's own custom placeholder bodies.
+ *
+ * Every placeable row is BOTH a drag handle and a `+` button, because dragging
+ * is not available on a phone. The stage sits above the palette when the layout
+ * stacks, so a drag to the board is a vertical gesture — and vertical has to
+ * belong to the page's scroll, or the list cannot be scrolled past at all
+ * (findings F34a, F34b). `+` is the path that needs no gesture.
  */
 export function Palette({
   onQuickPlace,
   onNewCustom,
   onEditCustom,
 }: {
-  onQuickPlace: (itemKey: string) => void
+  /** Places at the middle of the wall. False when nothing fits. */
+  onQuickPlace: (itemKey: string) => boolean
   onNewCustom: () => void
   onEditCustom: (part: CustomPart) => void
 }) {
@@ -25,6 +36,26 @@ export function Palette({
   const setExtra = useConfig((s) => s.setExtra)
   const customParts = useConfig((s) => s.customParts)
   const startFromPalette = useDrag((s) => s.startFromPalette)
+  const allowOverlap = useConfig((s) => s.allowOverlap)
+  const setAllowOverlap = useConfig((s) => s.setAllowOverlap)
+
+  // A full board used to make `+` look like a dead button. Say so instead, and
+  // point at the control that fixes it.
+  const [noRoom, setNoRoom] = useState(false)
+  const noRoomTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => {
+    if (noRoomTimer.current) clearTimeout(noRoomTimer.current)
+  }, [])
+
+  function quickPlace(itemKey: string) {
+    if (onQuickPlace(itemKey)) {
+      setNoRoom(false)
+      return
+    }
+    setNoRoom(true)
+    if (noRoomTimer.current) clearTimeout(noRoomTimer.current)
+    noRoomTimer.current = setTimeout(() => setNoRoom(false), NO_ROOM_FEEDBACK_MS)
+  }
 
   const placeable = ACCESSORIES.filter(isPlaceable)
   const costOnly = ACCESSORIES.filter((item) => !item.placeable)
@@ -34,9 +65,28 @@ export function Palette({
       <h2>{t('palette.title')}</h2>
       <p className="palette__hint">{t('palette.hint')}</p>
 
+      {/* Placement rules are explained here, so the switch that relaxes them
+          belongs here too — and the toolbar's second row is the subject of F30
+          and F31 and is not somewhere to add a control on a guess (F34e). */}
+      <label className="palette__overlap">
+        <input
+          type="checkbox"
+          checked={allowOverlap}
+          onChange={(event) => setAllowOverlap(event.target.checked)}
+        />
+        <span>{t('palette.allowOverlap')}</span>
+      </label>
+      <p className="palette__hint">{t('palette.allowOverlapHint')}</p>
+
+      {noRoom && (
+        <p className="palette__no-room" role="status">
+          {t('palette.noRoom')}
+        </p>
+      )}
+
       <ul className="palette__list">
         {placeable.map((item) => (
-          <li key={item.key}>
+          <li key={item.key} className="palette__row">
             <button
               type="button"
               className="palette__item"
@@ -51,7 +101,7 @@ export function Palette({
               onKeyDown={(event) => {
                 if (event.key !== 'Enter' && event.key !== ' ') return
                 event.preventDefault()
-                onQuickPlace(item.key)
+                quickPlace(item.key)
               }}
             >
               <span className="palette__name">{item.names[language]}</span>
@@ -59,6 +109,17 @@ export function Palette({
                 {item.dims.w}×{item.dims.h} mm
                 {item.packQty > 1 && ` · ${item.packQty}×`}
               </span>
+            </button>
+            {/* A sibling, not a child: `pointerdown` inside `.palette__item`
+                starts a drag, so a nested button could never be tapped. */}
+            <button
+              type="button"
+              className="palette__place"
+              aria-label={`${t('palette.place')}: ${item.names[language]}`}
+              title={t('palette.place')}
+              onClick={() => quickPlace(item.key)}
+            >
+              +
             </button>
           </li>
         ))}
@@ -106,13 +167,22 @@ export function Palette({
               onKeyDown={(event) => {
                 if (event.key !== 'Enter' && event.key !== ' ') return
                 event.preventDefault()
-                onQuickPlace(part.key)
+                quickPlace(part.key)
               }}
             >
               <span className="palette__name">{part.name}</span>
               <span className="palette__dims">
                 {part.cols * PITCH_MM}×{part.rows * PITCH_MM}×{part.depthMm} mm
               </span>
+            </button>
+            <button
+              type="button"
+              className="palette__place"
+              aria-label={`${t('palette.place')}: ${part.name}`}
+              title={t('palette.place')}
+              onClick={() => quickPlace(part.key)}
+            >
+              +
             </button>
             <button
               type="button"

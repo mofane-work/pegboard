@@ -93,6 +93,20 @@ interface ConfigState {
   viewHeight: number
   /** Projection used for the printed diagram. */
   printAngle: 'front' | 'iso'
+  /**
+   * Let bodies overlap when placing, moving and nudging.
+   *
+   * Occupancy is what makes a nudge refuse, so an item can be walled in by its
+   * neighbours with no legal step toward where the user actually wants it. This
+   * is the escape hatch, and it is deliberately a *mode* rather than a
+   * per-move override: a rule you can see is one you can turn back off.
+   *
+   * It relaxes body collision ONLY. Every peg still has to land in a real slot
+   * — that is physics, not policy, and `evaluatePlacement` already reports the
+   * two separately. And it never travels in a share link: a recipient must not
+   * inherit a relaxed rule set they did not choose (findings F34d).
+   */
+  allowOverlap: boolean
 
   /** User-entered prices by catalog key. Always beat fetched prices. */
   overrides: Record<string, number>
@@ -132,6 +146,7 @@ interface ConfigState {
   setViewRatio: (ratio: number) => void
   setViewHeight: (height: number) => void
   setPrintAngle: (angle: 'front' | 'iso') => void
+  setAllowOverlap: (allowOverlap: boolean) => void
 
   setOverride: (key: string, price: number | null) => void
   toggleIncluded: (key: string) => void
@@ -233,6 +248,9 @@ export function migrateConfig(persisted: unknown, version: number): ConfigState 
   // v9 added the stage height control. The default is the height the pane
   // already filled, so a v8 configuration reopens looking identical.
   if (version < 9) state.viewHeight ??= 0.4
+  // v10 added the overlap escape hatch. Off is the rule every saved wall was
+  // built under, so defaulting to false reopens it behaving identically.
+  if (version < 10) state.allowOverlap ??= false
   return state
 }
 
@@ -257,6 +275,7 @@ export const useConfig = create<ConfigState>()(
       // the pane already fills on any normal window, so an existing saved
       // configuration looks unchanged until the user reaches for the slider.
       viewHeight: 0.4,
+      allowOverlap: false,
       printAngle: 'front',
 
       overrides: {},
@@ -413,6 +432,7 @@ export const useConfig = create<ConfigState>()(
       setViewHeight: (viewHeight) =>
         set({ viewHeight: Math.min(1.5, Math.max(0.4, viewHeight)) }),
       setPrintAngle: (printAngle) => set({ printAngle }),
+      setAllowOverlap: (allowOverlap) => set({ allowOverlap }),
 
       setOverride: (key, price) =>
         set((state) => {
@@ -483,7 +503,7 @@ export const useConfig = create<ConfigState>()(
     }),
     {
       name: 'skadis-config',
-      version: 9,
+      version: 10,
       // v1 placements predate rotation; default them to upright rather than
       // discarding a saved configuration.
       migrate: migrateConfig,

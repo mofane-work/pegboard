@@ -61,6 +61,82 @@
   cursor: grabbing;
 }
 
+/* The controls for whatever is selected, over the 3D pane.
+   Bottom-right, because that is where a thumb rests on a tablet held two-handed
+   and because `.orbit-hint` already owns the bottom-left.
+
+   `pointer-events: none` on the wrapper with `auto` on the buttons is the same
+   rule `.orbit-hint` follows below, and for the same reason: the stage under
+   this is the drop target for every accessory drag, so the gaps between the
+   buttons have to stay transparent to the pointer. */
+.selection-controls {
+  position: absolute;
+  /* Above the hint, which shares this corner of the stage on a narrow screen. */
+  z-index: 1;
+  inset-block-end: var(--space-3);
+  inset-inline-end: var(--space-3);
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+  pointer-events: none;
+}
+
+.selection-controls__verbs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* Three columns and three rows with the arrows in a cross. The centre cell
+   stays empty: a "confirm" there would be a button with nothing to confirm, and
+   an accidental target right where the thumb travels between arrows. */
+.selection-controls__pad {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  grid-template-rows: repeat(3, auto);
+  gap: var(--space-1);
+}
+
+.selection-controls__arrow--up { grid-area: 1 / 2; }
+.selection-controls__arrow--left { grid-area: 2 / 1; }
+.selection-controls__arrow--right { grid-area: 2 / 3; }
+.selection-controls__arrow--down { grid-area: 3 / 2; }
+
+/* 44 px is the smallest target that is reliably hittable with a thumb, which is
+   the entire point of this control. Do not shrink it to fit a narrow stage —
+   let it overlap the render instead. */
+.selection-controls__button {
+  pointer-events: auto;
+  inline-size: 44px;
+  block-size: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.18);
+  transition: background var(--transition), opacity var(--transition);
+}
+
+.selection-controls__button:hover:not(:disabled) {
+  background: var(--color-surface-raised);
+}
+
+.selection-controls__button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.selection-controls__button--danger {
+  color: var(--color-danger);
+}
+
 /* Says the picture is interactive, then gets out of the way for good once the
    camera has moved. `pointer-events: none` is load-bearing — the stage under
    it is the drop target for every accessory drag. */
@@ -84,6 +160,16 @@
 }
 
 .orbit-hint--gone {
+  opacity: 0;
+}
+
+/* The two overlays share the bottom of the stage and do not both fit on a
+   phone: the controls are about 192 px wide and the hint about 200 px, against
+   a ~360 px stage. `.selection-controls` renders immediately before the hint
+   and only exists while something is selected, so this sibling rule needs no
+   state of its own — the controls are what you are using, the hint is ambient.
+   Reuses opacity rather than `display` so it keeps the same fade. */
+.selection-controls ~ .orbit-hint {
   opacity: 0;
 }
 
@@ -256,6 +342,18 @@
   list-style: none;
 }
 
+/* `pan-y`, not `none`. `none` says "this element handles every touch gesture",
+   which is what a drag onto the board needs — and it made the list impossible to
+   scroll past with a finger. On a stacked phone layout that is not a pane that
+   refuses to scroll, it is the whole PAGE refusing while your finger is over the
+   list, because the palette is `min-height: auto` there.
+
+   The trade is deliberate. On a phone the stage sits ABOVE the palette
+   (`order: -1`), so a drag to the board is a vertical gesture — the same one
+   scrolling needs. They cannot both win. Scrolling wins, and `.palette__place`
+   is the placement path that needs no gesture at all (findings F34a, F34b).
+   Desktop is untouched: touch-action does not apply to mouse input, and where
+   the board is BESIDE the palette the drag is horizontal and still works. */
 .palette__item {
   display: flex;
   flex-direction: column;
@@ -264,7 +362,60 @@
   padding: var(--space-2) var(--space-3);
   text-align: start;
   cursor: grab;
-  touch-action: none;
+  touch-action: pan-y;
+}
+
+/* The row is the drag handle plus its + button. */
+.palette__row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-2);
+}
+
+/* `.palette__item` carries `width: 100%`, which in a flex row resolves against
+   the whole container and would want to overflow past the + button. `flex: 1`
+   makes it take what is left instead. `min-width: 0` is the F30 lesson: a flex
+   item's automatic minimum is its content, and these hold item names that are
+   wider in ja / zh-Hant. Same pair `.palette__custom-row` already needs. */
+.palette__row .palette__item {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 44 px: this is the primary placement control on touch, so it gets a thumb
+   target rather than matching the row's text size. */
+.palette__place {
+  flex: 0 0 auto;
+  inline-size: 44px;
+  padding: 0;
+  font-size: var(--font-size-lg);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.palette__overlap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  /* Comfortably tappable without turning a checkbox into a button. */
+  min-block-size: 44px;
+  font-size: var(--font-size-sm);
+}
+
+.palette__overlap input {
+  inline-size: 18px;
+  block-size: 18px;
+  padding: 0;
+  accent-color: var(--color-accent);
+}
+
+.palette__no-room {
+  margin: 0 0 var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
 }
 
 .palette__item:active {
@@ -701,6 +852,7 @@ select:hover {
   .toolbar,
   .palette,
   .layout__stage,
+  .selection-controls,
   .layout__footer,
   .cost__table,
   .cost__scroll,
@@ -875,6 +1027,7 @@ select:hover {
 
 .palette__custom-row .palette__item {
   flex: 1;
+  min-width: 0;
 }
 
 .palette__custom-edit {

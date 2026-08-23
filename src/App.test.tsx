@@ -2,14 +2,15 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { useConfig } from './state/store'
+import { buildWall, layoutBoards } from './lib/wall'
 import { analyticsConfigured } from './lib/analytics'
 
 // jsdom has no WebGL, so the 3D canvas cannot mount. These tests cover the
 // surrounding UI; the geometry and placement logic are tested directly in
 // src/lib/grid.test.ts, which needs no DOM at all.
 // The Privacy wording is chosen from analyticsConfigured(), which reads a
-// build-time constant. Driving that boolean directly keeps these tests true of
-// a fork that fills in CONFIGURED_ID as well as of the build shipped here.
+// build-time env var. Driving that boolean directly keeps these tests true of
+// the configured deployment as well as of the unconfigured build a fork gets.
 // initAnalytics is stubbed out because no test wants a real tracker tag in jsdom.
 vi.mock('./lib/analytics', async (importActual) => {
   const actual = await importActual<typeof import('./lib/analytics')>()
@@ -56,6 +57,9 @@ function resetStore() {
     viewHeight: 0.4,
     // Omitted, this leaked 'iso' from the front/iso test into everything after it.
     printAngle: 'front',
+    // Same trap: left out, the share-link test's `true` leaked forward and
+    // quick-place happily stacked two items on one slot.
+    allowOverlap: false,
   })
 }
 
@@ -235,7 +239,7 @@ describe('App shell', () => {
   it('says plainly what leaves the browser and what does not', () => {
     // The Privacy section is a promise that has to track the build, so this
     // test pins the build it is describing rather than reading whatever the
-    // developer's shell or CONFIGURED_ID happens to hold.
+    // developer's shell happens to export.
     vi.mocked(analyticsConfigured).mockReturnValue(false)
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: 'Help' }))
@@ -392,9 +396,204 @@ describe('App shell', () => {
     expect(useConfig.getState().placements).toHaveLength(1)
   })
 
+  it('places from the + button, so touch users never have to drag', () => {
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Place on board: Hook, large' }))
+
+    const placements = useConfig.getState().placements
+    expect(placements).toHaveLength(1)
+    expect(placements[0].itemKey).toBe('hook-large')
+  })
+
+  it('says so when the board is full, instead of looking like a dead button', () => {
+    // One 56x56 board, filled with shelves on every lattice-A row: + has
+    // nowhere left to go, and used to do nothing at all.
+    const wall = buildWall(layoutBoards(useConfig.getState().boards))
+    useConfig.setState({
+      placements: wall[0].holes
+        .filter((h) => h.lattice === 'A')
+        .map((h, i) => ({
+          id: `f${i}`,
+          itemKey: 'hook-large',
+          holeId: h.id,
+          rotation: 0 as const,
+          boardIndex: 0,
+        })),
+    })
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Place on board: Shelf' }))
+
+    // Not getByRole('status'): the cost-only steppers use <output>, which is a
+    // status role too, so the role alone is ambiguous here.
+    expect(screen.getByText(/No room on the board/)).toBeTruthy()
+  })
+
+  it('still finds free space in overlap mode rather than stacking on one hole', () => {
+    // Overlap is for moving past neighbours. If it governed placement too,
+    // every + would drop another item on the same centre hole.
+    useConfig.setState({ allowOverlap: true })
+    render(<App />)
+
+    const plus = () => screen.getByRole('button', { name: 'Place on board: Hook, large' })
+    fireEvent.click(plus())
+    fireEvent.click(plus())
+
+    const holes = useConfig.getState().placements.map((p) => p.holeId)
+    expect(holes).toHaveLength(2)
+    expect(new Set(holes).size).toBe(2)
+  })
+
+  it('falls back to overlapping only when the board really is full', () => {
+    const wall = buildWall(layoutBoards(useConfig.getState().boards))
+    useConfig.setState({
+      allowOverlap: true,
+      placements: wall[0].holes
+        .filter((h) => h.lattice === 'A')
+        .map((h, i) => ({
+          id: `f${i}`,
+          itemKey: 'hook-large',
+          holeId: h.id,
+          rotation: 0 as const,
+          boardIndex: 0,
+        })),
+    })
+    const before = useConfig.getState().placements.length
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Place on board: Shelf' }))
+
+    expect(useConfig.getState().placements).toHaveLength(before + 1)
+    expect(screen.queryByText(/No room on the board/)).toBeNull()
+  })
+
+  it('lets overlap mode move an item past a neighbour that blocks it', () => {
+    useConfig.setState({
+      placements: [
+        { id: 'sel', itemKey: 'hook-large', holeId: 'A:5,5', rotation: 0, boardIndex: 0 },
+        { id: 'block', itemKey: 'hook-large', holeId: 'A:6,5', rotation: 0, boardIndex: 0 },
+      ],
+      selectedId: 'sel',
+    })
+    render(<App />)
+
+    const right = () => screen.getByRole('button', { name: 'Move right' }) as HTMLButtonElement
+    expect(right().disabled).toBe(true)
+
+    fireEvent.click(screen.getByRole('checkbox', { name: /Allow items to overlap/ }))
+
+    expect(right().disabled).toBe(false)
+    fireEvent.click(right())
+    expect(useConfig.getState().placements[0].holeId).toBe('A:6,5')
+  })
+
+  it('does not let a share link change your overlap choice', () => {
+    // A share link rewrites the whole configuration. A permissive placement
+    // rule is the recipient's decision, not the sender's, so it must survive
+    // `applyShared` untouched (findings F34d).
+    useConfig.setState({ allowOverlap: true })
+    window.location.hash = '#c=v2~board-36x56-white~gb~GBP~A*1*1*shelf*90*0~~~'
+
+    render(<App />)
+
+    expect(useConfig.getState().allowOverlap).toBe(true)
+  })
+
+  it('shows no selection controls until something is selected', () => {
+    render(<App />)
+    expect(screen.queryByRole('group', { name: 'Selected item' })).toBeNull()
+  })
+
+  it('moves the selected item one hole from the on-canvas arrows', () => {
+    useConfig.setState({
+      placements: [{ id: 'sel', itemKey: 'hook-large', holeId: 'A:5,5', rotation: 0, boardIndex: 0 }],
+      selectedId: 'sel',
+    })
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Move right' }))
+    expect(useConfig.getState().placements[0].holeId).toBe('A:6,5')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Move up' }))
+    expect(useConfig.getState().placements[0].holeId).toBe('A:6,6')
+  })
+
+  it('disables the direction the board has no room for, rather than failing on tap', () => {
+    // Bottom-left corner: down and left are off the board, up and right are not.
+    useConfig.setState({
+      placements: [{ id: 'sel', itemKey: 'hook-large', holeId: 'A:0,0', rotation: 0, boardIndex: 0 }],
+      selectedId: 'sel',
+    })
+    render(<App />)
+
+    // No jest-dom in this project, so assert the property directly.
+    const arrow = (name: string) =>
+      screen.getByRole('button', { name }) as HTMLButtonElement
+    expect(arrow('Move left').disabled).toBe(true)
+    expect(arrow('Move down').disabled).toBe(true)
+    expect(arrow('Move right').disabled).toBe(false)
+    expect(arrow('Move up').disabled).toBe(false)
+  })
+
+  it('rotates and deletes the selection without a keyboard', () => {
+    useConfig.setState({
+      placements: [{ id: 'sel', itemKey: 'hook-large', holeId: 'A:5,5', rotation: 0, boardIndex: 0 }],
+      selectedId: 'sel',
+    })
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Rotate' }))
+    expect(useConfig.getState().placements[0].rotation).toBe(90)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove item' }))
+    expect(useConfig.getState().placements).toEqual([])
+    // Deleting clears the selection, so the controls go with it.
+    expect(screen.queryByRole('group', { name: 'Selected item' })).toBeNull()
+  })
+
+  it('nudges from the arrow keys too, which desktop never had either', () => {
+    useConfig.setState({
+      placements: [{ id: 'sel', itemKey: 'hook-large', holeId: 'A:5,5', rotation: 0, boardIndex: 0 }],
+      selectedId: 'sel',
+    })
+    render(<App />)
+
+    fireEvent.keyDown(window, { key: 'ArrowLeft' })
+    expect(useConfig.getState().placements[0].holeId).toBe('A:4,5')
+  })
+
+  it('leaves arrow keys alone when nothing is selected, so the page still scrolls', () => {
+    useConfig.setState({
+      placements: [{ id: 'sel', itemKey: 'hook-large', holeId: 'A:5,5', rotation: 0, boardIndex: 0 }],
+      selectedId: null,
+    })
+    render(<App />)
+
+    const event = new KeyboardEvent('keydown', { key: 'ArrowLeft', cancelable: true, bubbles: true })
+    window.dispatchEvent(event)
+
+    expect(event.defaultPrevented).toBe(false)
+    expect(useConfig.getState().placements[0].holeId).toBe('A:5,5')
+  })
+
+  it('undoes a nudge, because it goes through the same move() as a drag', () => {
+    useConfig.setState({
+      placements: [{ id: 'sel', itemKey: 'hook-large', holeId: 'A:5,5', rotation: 0, boardIndex: 0 }],
+      selectedId: 'sel',
+    })
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Move right' }))
+    expect(useConfig.getState().placements[0].holeId).toBe('A:6,5')
+
+    useConfig.getState().undo()
+    expect(useConfig.getState().placements[0].holeId).toBe('A:5,5')
+  })
+
   it('lets a keyboard user place an accessory without a pointer', () => {
     render(<App />)
-    const hook = screen.getByRole('button', { name: /Hook, large/ })
+    const hook = screen.getByRole('button', { name: /^Hook, large/ })
 
     fireEvent.keyDown(hook, { key: 'Enter' })
 
@@ -405,7 +604,7 @@ describe('App shell', () => {
 
   it('does not stack keyboard placements on the same slot', () => {
     render(<App />)
-    const hook = screen.getByRole('button', { name: /Hook, large/ })
+    const hook = screen.getByRole('button', { name: /^Hook, large/ })
 
     fireEvent.keyDown(hook, { key: 'Enter' })
     fireEvent.keyDown(hook, { key: 'Enter' })

@@ -28,13 +28,21 @@
  */
 
 /**
- * TODO: replace the empty string with the site token from counter.dev, e.g.
- *   const CONFIGURED_ID = 'a1b2c3d4-...'
- * While it is empty NOTHING is injected and no request is made — a placeholder
- * can never ship as a half-configured tracker. To preview without editing:
+ * THE TOKEN IS NEVER HARDCODED HERE, AND THERE IS NOWHERE ELSE TO PUT IT.
+ * `VITE_COUNTER_DEV_ID` is the only source. It is supplied at build time by
+ * .github/workflows/deploy-pages.yml from the `COUNTER_DEV_ID` repository
+ * variable, so the token exists in the deployment and in nothing else.
+ *
+ * That is the point. GitHub does not copy repository variables or secrets into
+ * forks, and a fork of this source tree contains no token — so someone who
+ * forks and deploys counts visits into THEIR counter.dev account or, far more
+ * likely, into none at all. A constant in this file would have been inherited
+ * by every fork and quietly reported their traffic as ours, which is both a
+ * privacy problem for their visitors and junk data for us. Do not add one back,
+ * however convenient it looks: `npm run dev` and `npm test` want an
+ * unconfigured build, and a preview is one env var away —
  *   VITE_COUNTER_DEV_ID=<token> npm run dev
  */
-const CONFIGURED_ID = ''
 
 /** Counter.dev's hosted tracker. 1.1 KB, loaded async, failure is silent. */
 const SCRIPT_SRC = 'https://cdn.counter.dev/script.js'
@@ -57,23 +65,21 @@ function isWellFormedId(id: string): boolean {
 }
 
 /**
- * The resolution rule, as a pure function of its two sources: the environment
- * wins over the hardcoded constant, and anything malformed resolves to none.
+ * The resolution rule, as a pure function of the one source there is: an
+ * absent, non-string or malformed value resolves to no token, which resolves
+ * to no request.
  *
- * Exported because it is the only way to test the unconfigured build. A fork
- * that fills in CONFIGURED_ID cannot reach "no token anywhere" through
- * counterDevId() — the constant is baked in — and "no token means no request"
- * is a privacy guarantee that has to stay provable in every build, not only in
- * the ones that happen to ship unconfigured.
+ * Exported so that rule can be tested directly, without a build in which
+ * `import.meta.env` happens to be arranged the right way.
  */
-export function resolveCounterDevId(fromEnv: unknown, configured: string): string {
-  const id = (typeof fromEnv === 'string' && fromEnv) || configured
+export function resolveCounterDevId(fromEnv: unknown): string {
+  const id = typeof fromEnv === 'string' ? fromEnv : ''
   return isWellFormedId(id) ? id : ''
 }
 
-/** Empty when analytics is not configured, which is the default. */
+/** Empty when analytics is not configured, which is every build but the deploy. */
 export function counterDevId(): string {
-  return resolveCounterDevId(import.meta.env.VITE_COUNTER_DEV_ID, CONFIGURED_ID)
+  return resolveCounterDevId(import.meta.env.VITE_COUNTER_DEV_ID)
 }
 
 /** True when a token is configured — i.e. this build would count visits. */
@@ -121,8 +127,8 @@ function utcOffsetHours(): number {
  * the same reason `dismissBoot` is.
  *
  * @param id  defaults to this build's configured token. App.tsx calls this
- *            with no argument; the parameter exists so a test can exercise the
- *            empty-token gate in a build that hardcodes CONFIGURED_ID.
+ *            with no argument; the parameter exists so a test can drive both
+ *            sides of the empty-token gate without rebuilding.
  * @returns whether a script tag was added, so tests can assert the gate
  *          without reaching into the DOM.
  */
