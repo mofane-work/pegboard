@@ -164,15 +164,19 @@ export function buildAccessoryParts(item: AccessoryItem): Part[] {
         ...(archetype === 'containerLid' ? [box(w, WALL, d, [0, -WALL / 2, d / 2])] : []),
       ]
 
-    case 'basket':
+    case 'basket': {
+      // Suggest the wire mesh with a few uprights rather than modelling it.
+      // The count follows the width, or the 120 mm baskets in the set of 3 get
+      // the same six bars as the 345 mm one and read as solid.
+      const bars = Math.max(2, Math.round(w / 60))
       return [
         ...tray(w, h, d, 0),
-        // Suggest the wire mesh with a few uprights rather than modelling it.
-        ...Array.from({ length: 6 }, (_, i) => ({
+        ...Array.from({ length: bars }, (_, i) => ({
           geometry: new BoxGeometry(1.5, h, 1.5),
-          position: [-w / 2 + 20 + i * ((w - 40) / 5), -h / 2, d - 1] as Vector3Tuple,
+          position: [-w / 2 + 20 + i * ((w - 40) / (bars - 1)), -h / 2, d - 1] as Vector3Tuple,
         })),
       ]
+    }
 
     case 'clip':
       return [

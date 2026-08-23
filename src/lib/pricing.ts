@@ -10,7 +10,7 @@
  *     produces a number the user would act on and be wrong.
  */
 
-import type { CatalogItem, MarketId } from '../data/catalog'
+import { isKitMember, type CatalogItem, type MarketId } from '../data/catalog'
 import type { PriceTable } from './ikeaSearch'
 
 /** `custom` is a market with no live source — every price is user-supplied. */
@@ -124,6 +124,40 @@ export interface CostLine {
   lineTotal: number | null
   /** Unchecked lines stay visible but drop out of the total. */
   included: boolean
+}
+
+/**
+ * Fold kit members into the pack that actually sells them.
+ *
+ * A kit member is not a SKU: the three SKÅDIS baskets only exist inside the set
+ * of 3, so one pack yields one of EVERY size. The packs you have to buy are
+ * therefore the worst member's count, never the sum — summing would charge
+ * three sets for what one set contains, which is the same class of error as
+ * costing a 2-pack of hooks per hook (findings.md F36).
+ *
+ * Whatever the user asked for by hand under the pack's own key is added on top:
+ * they typed a number of sets, and that is a separate intent from what the wall
+ * needs.
+ */
+export function foldKits(
+  counts: ReadonlyMap<string, number>,
+  byKey: ReadonlyMap<string, CatalogItem>,
+): Map<string, number> {
+  const out = new Map(counts)
+  const worst = new Map<string, number>()
+
+  for (const [key, quantity] of counts) {
+    const item = byKey.get(key)
+    if (!item || !isKitMember(item)) continue
+    out.delete(key)
+    worst.set(item.kitKey, Math.max(worst.get(item.kitKey) ?? 0, quantity))
+  }
+
+  for (const [kitKey, quantity] of worst) {
+    out.set(kitKey, (out.get(kitKey) ?? 0) + quantity)
+  }
+
+  return out
 }
 
 export interface CostInput {

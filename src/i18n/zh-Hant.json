@@ -92,6 +92,7 @@
     "edit": "輸入價格",
     "reset": "改用 IKEA 價格",
     "included": "計入總計",
+    "kitNote": "三種尺寸的收納籃只以整組販售，板面上的數量需要 {{count}} 組 3 件組。",
     "uncheckedHint": "取消勾選你已經擁有的品項，即可只計算升級花費。"
   },
   "status": {

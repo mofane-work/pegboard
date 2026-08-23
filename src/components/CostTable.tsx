@@ -8,6 +8,7 @@ import snapshotJson from '../data/price-snapshot.json'
 import { INTL_LOCALE } from '../i18n'
 import {
   buildCostLines,
+  foldKits,
   formatPrice,
   totalCost,
   type CostInput,
@@ -52,7 +53,7 @@ export function CostTable({ onPrint }: { onPrint: () => void }) {
     [placements],
   )
 
-  const entries = useMemo<CostInput[]>(() => {
+  const { entries, kitSets } = useMemo<{ entries: CostInput[]; kitSets: number }>(() => {
     const counts = new Map<string, number>()
     for (const board of boards) {
       counts.set(board.boardKey, (counts.get(board.boardKey) ?? 0) + 1)
@@ -75,11 +76,25 @@ export function CostTable({ onPrint }: { onPrint: () => void }) {
     for (const [key, qty] of Object.entries(extras)) {
       counts.set(key, (counts.get(key) ?? 0) + qty)
     }
-    return [...counts].map(([key, quantity]) => ({
-      key,
-      quantity,
-      included: !excluded[key],
-    }))
+    // Placed basket sizes become sets of 3 here, before the include/exclude
+    // flags are read: the checkbox and the price override belong to the pack
+    // the user actually buys, not to a size IKEA does not sell on its own.
+    const folded = foldKits(counts, BY_KEY)
+
+    // How much of the wall is only buyable as a kit, for the footnote. Read off
+    // the difference the fold made rather than recounting, so the note can
+    // never disagree with the line it explains. Untouched keys contribute zero.
+    let kitSets = 0
+    for (const [key, quantity] of folded) kitSets += quantity - (counts.get(key) ?? 0)
+
+    return {
+      kitSets,
+      entries: [...folded].map(([key, quantity]) => ({
+        key,
+        quantity,
+        included: !excluded[key],
+      })),
+    }
   }, [boards, placements, extras, excluded])
 
   const currency =
@@ -194,6 +209,7 @@ export function CostTable({ onPrint }: { onPrint: () => void }) {
       {total.usesStalePrices && total.staleCapturedAt && (
         <p className="cost__status">{t('cost.stale', { date: total.staleCapturedAt })}</p>
       )}
+      {kitSets > 0 && <p className="cost__status">{t('cost.kitNote', { count: kitSets })}</p>}
       {customPlaced > 0 && (
         <p className="cost__status">{t('custom.notCostedNote', { count: customPlaced })}</p>
       )}

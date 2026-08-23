@@ -141,6 +141,13 @@ accessories cannot actually hang in those, which is noted in Help rather than bl
   overhang a board edge: that is physical, and a boundary-mounted hook is a real use case.
 - Accessories rotate in quarter turns; `rotatePattern` transforms peg offsets and the
   body rect together.
+  - **Peg spans follow the width, and photographs are the authority.** Hooks land on 40 mm
+  multiples, so where a body's width IS an exact multiple of 40 the hooks sit at its *ends*
+  and the span is `w / 40` pitches with zero overhang; where it is not, the span is the
+  largest multiple that fits and the remainder overhangs. The display shelf was inset one
+  pitch too far until it was measured off IKEA's own straight-on photography — same class of
+  error as the F7→F8 lattice correction. See findings **F35**; `shelf` at 280 mm is the
+  open case (**F35d**) and is deliberately left alone until there is a photo that settles it.
 
 ### Traditional Chinese has no live price source
 
@@ -208,6 +215,7 @@ interface BaseItem {
   key: string;                                 // 'hook-large', 'board-76x56-white'
   itemNos: Partial<Record<MarketId, string>>;  // { us: '50335618', jp: '30321617' }
   packQty: number;                             // units per pack — often > 1
+  kitKey?: string;                             // sold only inside another item's pack
   names: Record<LanguageId, string>;           // total: every language or it renders blank
 }
 
@@ -255,6 +263,29 @@ A user can define placeholder bodies for the things on their wall that are not S
   than dropping one item. `App.share()` filters them out and reports the dropped count.
 - Persisted (store `version: 8`). Limits are clamped **in the store**, not only in the form:
   `migrate` is skipped when the stored version already matches.
+
+### Kits — a member is not a SKU, and the pack maths is `max`, not `sum`
+
+The three SKÅDIS storage baskets exist **only inside the set of 3**: IKEA gives no size an
+article number of its own. They are modelled as ordinary placeable accessories carrying
+`kitKey: 'basket-set-3'` and `itemNos: {}`, so snapping, rotation, collision and the print
+sheet need no special case — and `isKitMember(item)` narrows to one.
+
+Costing them is where it goes wrong if you are not careful. **One pack yields one of EVERY
+member**, so a wall with a large, a medium and a small needs one set, not three:
+
+```ts
+packs = Math.max(...memberCounts)   // NOT the sum
+```
+
+`foldKits(counts, byKey)` in `lib/pricing.ts` does that collapse, and `CostTable` calls it
+**before** reading `excluded` — the checkbox and the price override belong to the pack the
+user actually buys. Sets the user typed in by hand under the pack's own key are added on top.
+`buildCostLines` stays dumb about kits deliberately; what makes a stray member safe is that it
+resolves to `source: 'unknown'` and is never counted as zero. Findings **F36**.
+
+Kit members are excluded from the catalog tests that assert per-market SKU coverage. That is
+correct, not a loophole: a number there would be invented.
 
 ### Pack quantity — the cost model is NOT per-unit
 

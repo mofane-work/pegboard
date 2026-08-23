@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import raw from '../../data-raw/skadis-raw.json'
-import { ACCESSORIES, BOARDS, BY_KEY, CATALOG, isPlaceable, itemNumbersFor } from './catalog'
+import {
+  ACCESSORIES,
+  BOARDS,
+  BY_KEY,
+  CATALOG,
+  isKitMember,
+  isPlaceable,
+  itemNumbersFor,
+} from './catalog'
 import {
   anchorPointForCentre,
   evaluatePlacement,
@@ -44,6 +52,26 @@ describe('catalog integrity', () => {
       else expect(item.pattern, item.key).toBeUndefined()
     }
   })
+
+  it('points every kit member at a real pack and gives it no article number', () => {
+    const members = CATALOG.filter(isKitMember)
+    expect(members.map((i) => i.key)).toEqual([
+      'basket-set-large',
+      'basket-set-medium',
+      'basket-set-small',
+    ])
+
+    for (const member of members) {
+      // No number anywhere: a member that carried one would be costed twice,
+      // once on its own line and once inside the pack.
+      expect(Object.keys(member.itemNos), member.key).toEqual([])
+
+      const kit = BY_KEY.get(member.kitKey)
+      expect(kit, member.key).toBeDefined()
+      expect(kit!.itemNos.us, member.kitKey).toBeTruthy()
+      expect(isKitMember(kit!), 'a kit cannot itself be a member').toBe(false)
+    }
+  })
 })
 
 describe('catalog agrees with the extracted IKEA data', () => {
@@ -80,8 +108,11 @@ describe('catalog agrees with the extracted IKEA data', () => {
   })
 
   it('carries a number for every item in every Western market', () => {
+    // Kit members are excluded on purpose: IKEA gives the three baskets in the
+    // set of 3 no article number, so a number here would be invented.
+    const sold = CATALOG.filter((i) => !isKitMember(i))
     for (const market of ['us', 'gb', 'de', 'fr'] as const) {
-      const missing = CATALOG.filter((i) => !i.itemNos[market]).map((i) => i.key)
+      const missing = sold.filter((i) => !i.itemNos[market]).map((i) => i.key)
       expect(missing, `${market}`).toEqual([])
     }
   })
@@ -89,7 +120,9 @@ describe('catalog agrees with the extracted IKEA data', () => {
   it('names exactly the items Japan does not sell, rather than a coverage floor', () => {
     // A percentage threshold silently absorbs a real regression; naming the
     // gaps means adding or losing one fails loudly (findings F18).
-    const missing = CATALOG.filter((i) => !i.itemNos.jp).map((i) => i.key).sort()
+    const missing = CATALOG.filter((i) => !isKitMember(i) && !i.itemNos.jp)
+      .map((i) => i.key)
+      .sort()
     expect(missing).toEqual(['accessory-set-7', 'connector-board'])
   })
 
@@ -178,6 +211,36 @@ describe('placement round-trip', () => {
     expect(result.ok).toBe(true)
     expect(result.holes).toHaveLength(2)
     expect(result.rect.w).toBe(280)
+  })
+})
+
+describe('peg spans measured off IKEA photography', () => {
+  const placeable = (key: string) => {
+    const item = BY_KEY.get(key)!
+    if (!isPlaceable(item)) throw new Error(`${key} should be placeable`)
+    return item
+  }
+  const span = (key: string) => Math.max(0, ...placeable(key).pattern.offsets.map(([c]) => c))
+
+  it('runs the display shelf hook to hook, over nine holes', () => {
+    // 320 mm is exactly eight pitches and the brackets sit at the tray's ends,
+    // so the body neither overhangs nor stops short (findings.md F35). Seven
+    // pitches — the earlier guess — left it half a hole shy at each end.
+    expect(span('display-shelf')).toBe(8)
+    expect(BY_KEY.get('display-shelf')).toMatchObject({ dims: { w: 320, d: 110 } })
+
+    expect(placeable('display-shelf').pattern.bodyOffset[0]).toBe(0)
+  })
+
+  it('models all three sizes in the basket set of 3', () => {
+    expect(span('basket-set-large')).toBe(6)
+    expect(span('basket-set-medium')).toBe(3)
+    expect(span('basket-set-small')).toBe(3)
+
+    // IKEA publishes these as "24x8x21 cm, 12x7x13 cm and 12x6x5 cm".
+    expect(BY_KEY.get('basket-set-large')).toMatchObject({ dims: { w: 240, d: 80, h: 210 } })
+    expect(BY_KEY.get('basket-set-medium')).toMatchObject({ dims: { w: 120, d: 70, h: 130 } })
+    expect(BY_KEY.get('basket-set-small')).toMatchObject({ dims: { w: 120, d: 60, h: 50 } })
   })
 })
 

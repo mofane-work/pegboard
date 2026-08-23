@@ -92,6 +92,7 @@
     "edit": "Set price",
     "reset": "Use IKEA price",
     "included": "Include in total",
+    "kitNote": "The three basket sizes only come together — {{count}} set(s) of 3 covers what is on the board.",
     "uncheckedHint": "Uncheck what you already own to price only the upgrade."
   },
   "status": {

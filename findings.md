@@ -1316,3 +1316,89 @@ subject of F30 and F31 — it overflows below ~1022 px and was only just stabili
 control there without a browser to measure in would be re-opening a closed bug on a guess. The
 palette is a vertically scrolling pane with room to spare, and it is already where the
 placement rules are explained (`palette.hint`). Cheaper to move later than to unbreak a layout.
+
+## F35 — The display shelf hangs on eight pitches, not seven (2026-08-23)
+
+Raised as "the display shelf looks like nine pegs wide". Re-checked against IKEA, and the
+**published dimensions were already right — the peg pattern was not.**
+
+**F35a — the dimensions are confirmed, twice over.** `sik.search…` gives no measurements
+for this article, so the PIP page was read directly. GB (metric) returns
+`Width 32 cm, Depth 11 cm`; US returns `12 5/8 "` × `4 3/8 "` = 320.7 × 111 mm. That is
+exactly what `catalog.ts` carries, and `data-raw/skadis-raw.json` agrees. **No height is
+published in any market** — the 40 mm in `dims` remains a visual estimate, and measures
+≈43 mm off the photograph below, which is inside the error of a 46 px/40 mm image.
+
+- `https://www.ikea.com/gb/en/p/skadis-display-shelf-white-20591841/`
+
+**F35b — the product is a tray on two end brackets, and the brackets are at the ends.**
+IKEA's straight-on photograph `1359199_pe954114` shows the shelf on a 36×56 board. Detecting
+the dark slots by pixel column gives a pitch of 46.06 px = 40 mm, nine hole columns in the
+bracket row (622 → 990 px = 320 mm — the A-lattice row of a 36 board, per the table in
+CLAUDE.md), and **both brackets hooked into the outermost two**. Eight pitches, hook to hook,
+tray running the full 320 mm between them.
+
+The catalog had `hanging(320, 40, 7)`: hooks 280 mm apart with the body overhanging 20 mm at
+each end. Self-consistent, wrong, and the same class of error as the F7→F8 lattice
+correction — derived from the width instead of read off the photograph.
+
+**F35c — the rule this establishes.** SKÅDIS hooks always land on 40 mm multiples, so where
+a body's width **is** an exact multiple of 40 the hooks sit at its ends and the body spans
+`w / 40` pitches with zero overhang. Where it is not — the 345 mm storage basket, the 75 mm
+container — the span is the largest multiple that fits and the overhang is the remainder.
+`hanging()` already encodes that; only the pitch count was wrong.
+
+`display-shelf` is now `patternEstimated: false` — this one is measured, not inferred. Note
+that `hanging()` now normalises `-0` out of `bodyOffset[0]`, which only ever appeared once a
+body exactly matched its peg span.
+
+**F35d — the plain shelf is NOT resolved.** 280 mm is also an exact multiple of 40, so F35c
+predicts seven pitches where the catalog carries six. Every photograph of it is three-quarter
+view or too small to separate the two candidates (measured shadow span 286.6 mm against a
+361 mm-wide board, which fits both), so it is **left alone**: changing it would be swapping a
+guess for a guess. Needs a physical part or a straight-on shot.
+
+## F36 — The storage basket set of 3 is three different sizes (2026-08-23)
+
+`basket-set-3` (US/GB `50517760`, JP `10517762`) was modelled as an unmeasured cost-only
+bundle. It is not: IKEA publishes the contents on the product page, under
+*Complementary info measurements*, identically in GB and JP:
+
+```
+Sizes: 24x8x21 cm, 12x7x13 cm and 12x6x5 cm.
+サイズ：24×8×21cm、12×7×13cm、12×6×5cm
+```
+
+Width × depth × height, confirmed against the mounted photograph `1120803_pe874450`
+(pitch 105.7 px = 40 mm): the large basket measures 632 px = 239 mm across and 560 px =
+212 mm tall. The description calls them "organisers in three different sizes… pockets in
+metal mesh", which is the `basket` archetype we already have.
+
+**F36a — the large basket's hooks are at its ends, six pitches apart.** Same method as F35b,
+on the same photograph: hole columns align with both ends of the 240 mm rim. The two 120 mm
+baskets are three pitches by F35c but are too small to read off the image, so they stay
+`patternEstimated: true`.
+
+**F36b — none of the three has an article number, so none can be a cost line.** IKEA sells
+no size on its own. Modelled as `kitKey: 'basket-set-3'` on `BaseItem`: the member is
+placeable, drawn and snapped like any accessory, and carries `itemNos: {}`.
+
+**F36c — the pack maths is `max`, not `sum`.** One set yields one of EVERY size, so a wall
+with a large, a medium and a small needs **one** set, not three. `foldKits()` in
+`lib/pricing.ts` collapses members into the pack at `max(member counts)`, and adds whatever
+the user asked for by hand under the pack's own key on top — that is a separate intent.
+Summing would be the F6a pack-quantity bug in reverse: over-ordering by 3× instead of
+under-ordering.
+
+The fold happens in `CostTable` **before** `excluded` is read, so the checkbox and the price
+override belong to the pack the user actually buys. `buildCostLines` is deliberately left
+dumb about kits; what guarantees a member can never be silently costed is that it resolves
+to `source: 'unknown'`, never to zero.
+
+**F36d — what this cost in tests.** Three catalog tests assert SKU coverage over the whole
+catalog (`carries a number for every item in every Western market`, `names exactly the items
+Japan does not sell`) — they now filter kit members out through `isKitMember`, with a new
+test asserting the members have no numbers and point at a real, purchasable pack. The
+palette gained three rows, which pushed the 12-iteration custom-part cap test past the
+default 5 s vitest budget; its timeout is now stated explicitly rather than left to be
+tripped by the next catalog addition.

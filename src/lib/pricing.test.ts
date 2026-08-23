@@ -6,6 +6,7 @@ import {
   type PriceContext,
   type PriceSnapshot,
   buildCostLines,
+  foldKits,
   formatPrice,
   packsNeeded,
   resolvePrice,
@@ -185,5 +186,63 @@ describe('formatting', () => {
 
   it('degrades gracefully for a currency code Intl does not know', () => {
     expect(formatPrice(120, 'NOTACURRENCY', 'en-US')).toBe('120 NOTACURRENCY')
+  })
+})
+
+describe('kit members are costed as the pack that sells them', () => {
+  const counts = (entries: Record<string, number>) => new Map(Object.entries(entries))
+
+  it('charges one set for one of each size, not three sets', () => {
+    const folded = foldKits(
+      counts({ 'basket-set-large': 1, 'basket-set-medium': 1, 'basket-set-small': 1 }),
+      BY_KEY,
+    )
+    expect(folded.get('basket-set-3')).toBe(1)
+    expect(folded.has('basket-set-large')).toBe(false)
+  })
+
+  it('takes the worst size, because one pack holds only one of each', () => {
+    const folded = foldKits(counts({ 'basket-set-large': 3, 'basket-set-small': 1 }), BY_KEY)
+    expect(folded.get('basket-set-3')).toBe(3)
+  })
+
+  it('adds sets the user asked for by hand on top of what the wall needs', () => {
+    const folded = foldKits(
+      counts({ 'basket-set-medium': 2, 'basket-set-3': 1 }),
+      BY_KEY,
+    )
+    expect(folded.get('basket-set-3')).toBe(3)
+  })
+
+  it('leaves ordinary items alone', () => {
+    const folded = foldKits(counts({ 'hook-large': 6, shelf: 2 }), BY_KEY)
+    expect([...folded]).toEqual([
+      ['hook-large', 6],
+      ['shelf', 2],
+    ])
+  })
+
+  it('produces a single priced line for the pack', () => {
+    const folded = foldKits(counts({ 'basket-set-large': 2, 'basket-set-small': 2 }), BY_KEY)
+    const lines = buildCostLines(
+      [...folded].map(([key, quantity]) => ({ key, quantity, included: true })),
+      BY_KEY,
+      context({ live: { '50517760': 11 } }),
+    )
+    expect(lines).toHaveLength(1)
+    expect(lines[0]).toMatchObject({ key: 'basket-set-3', packs: 2, lineTotal: 22 })
+  })
+
+  it('never gives a kit member a line of its own, even if one slips through', () => {
+    // buildCostLines is deliberately dumb about kits; the fold is the guard.
+    // What must hold is that the member cannot resolve a price and so cannot
+    // be silently added to a total.
+    const lines = buildCostLines(
+      [{ key: 'basket-set-large', quantity: 2, included: true }],
+      BY_KEY,
+      context(),
+    )
+    expect(lines[0].price).toMatchObject({ amount: null, source: 'unknown' })
+    expect(totalCost(lines, 'USD')).toMatchObject({ total: 0, unknownKeys: ['basket-set-large'] })
   })
 })

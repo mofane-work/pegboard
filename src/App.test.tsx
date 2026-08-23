@@ -878,6 +878,22 @@ describe('App shell', () => {
 
     expect(screen.getByTestId('grand-total').textContent).toBe('$3.00')
   })
+
+  it('bills the three basket sizes as one set of 3, not three of them', () => {
+    // One pack contains one of each size, so a wall with all three needs ONE
+    // set. Summing the sizes would charge three, which is the whole point of
+    // the kit fold in lib/pricing.ts.
+    render(<App />)
+    for (const size of ['large', 'medium', 'small']) {
+      fireEvent.click(screen.getByRole('button', { name: `Place on board: Storage basket, ${size} (set of 3)` }))
+    }
+
+    const rows = screen.getAllByRole('row').map((r) => r.textContent ?? '')
+    expect(rows.filter((r) => r.includes('Storage basket, large'))).toEqual([])
+    expect(rows.some((r) => r.includes('Storage basket, set of 3'))).toBe(true)
+    expect(screen.getByText(/set\(s\) of 3 covers what is on the board/)).toBeTruthy()
+  })
+
 })
 
 describe('custom components', () => {
@@ -1006,6 +1022,9 @@ describe('custom components', () => {
     expect(useConfig.getState().placements).toHaveLength(1)
   })
 
+  // Twelve trips through the dialog, each one re-rendering the whole palette.
+  // It sits close to the default 5 s budget on its own, so the timeout is
+  // stated rather than left to be tripped by the next catalog addition.
   it('stops at the cap rather than growing without limit', () => {
     render(<App />)
     for (let i = 0; i < 12; i += 1) createPart(`Part ${i}`)
@@ -1014,7 +1033,7 @@ describe('custom components', () => {
     expect(
       (screen.getByRole('button', { name: '+ New custom part' }) as HTMLButtonElement).disabled,
     ).toBe(true)
-  })
+  }, 20_000)
 })
 
 describe('board orientation', () => {

@@ -36,10 +36,21 @@ export type LocalizedNames = Record<LanguageId, string>
 
 interface BaseItem {
   key: string
-  /** Item number per market. Absent means "not sold in that market". */
+  /**
+   * Item number per market. Absent means "not sold in that market" — or, for a
+   * kit member, that IKEA gives it no article number of its own at all.
+   */
   itemNos: Partial<Record<MarketId, string>>
   /** Units per pack. Cost is ceil(qty / packQty) * packPrice — see findings F6a. */
   packQty: number
+  /**
+   * Set when this thing is only ever sold inside another catalog item's pack —
+   * the three SKÅDIS baskets that come in the set of 3. It has no article
+   * number and is never costed on its own line; `foldKits` in `lib/pricing.ts`
+   * charges the pack instead, and one pack covers one of EVERY member, so the
+   * packs needed are the worst member's count and not the sum (findings F36).
+   */
+  kitKey?: string
   names: LocalizedNames
 }
 
@@ -174,7 +185,9 @@ function hanging(
   return {
     lattice: 'either',
     offsets: pegSpanPitches > 0 ? [[pegSpanPitches, 0] as const] : [],
-    bodyOffset: [-(widthMm - pegSpan) / 2, -heightMm],
+    // `|| 0` because a body exactly as wide as its peg span yields -0, which
+    // reads as an offset in tests and diffs while behaving like zero.
+    bodyOffset: [-(widthMm - pegSpan) / 2 || 0, -heightMm],
     bodySize: [widthMm, heightMm],
   }
 }
@@ -254,8 +267,11 @@ export const ACCESSORIES: AccessoryItem[] = [
     // IKEA publishes no height for this item; 40 mm is a visual estimate.
     dims: { w: 320, d: 110, h: 40 },
     placeable: true,
-    pattern: hanging(320, 40, 7),
-    patternEstimated: true,
+    // Eight pitches, not seven: the two brackets hook into the OUTERMOST holes
+    // of a nine-hole row, so the tray runs hook to hook with no overhang.
+    // Measured off IKEA's own straight-on photography — findings.md F35.
+    pattern: hanging(320, 40, 8),
+    patternEstimated: false,
     dimsVerified: true,
     names: { en: 'Display shelf', ja: 'ディスプレイシェルフ', 'zh-Hant': '展示層板' },
   },
@@ -314,6 +330,72 @@ export const ACCESSORIES: AccessoryItem[] = [
     patternEstimated: true,
     dimsVerified: true,
     names: { en: 'Storage basket', ja: '収納バスケット', 'zh-Hant': '收納籃' },
+  },
+
+  // ---- The three sizes inside the set of 3 (505.177.60) ----
+  //
+  // IKEA sells no size on its own, so none of them has an article number: the
+  // pack is the SKU and `kitKey` points at it. Sizes are IKEA's own, published
+  // on the set's page as "24x8x21 cm, 12x7x13 cm and 12x6x5 cm" — width, depth,
+  // height, in that order (findings.md F36).
+  {
+    key: 'basket-set-large',
+    kind: 'accessory',
+    archetype: 'basket',
+    itemNos: {},
+    kitKey: 'basket-set-3',
+    packQty: 1,
+    dims: { w: 240, d: 80, h: 210 },
+    placeable: true,
+    // Hooks at the two ends, six pitches apart — measured against the hole
+    // columns in IKEA's straight-on photograph of all three mounted (F36).
+    pattern: hanging(240, 210, 6),
+    patternEstimated: false,
+    dimsVerified: true,
+    names: {
+      en: 'Storage basket, large (set of 3)',
+      ja: '収納バスケット 大（3個セット）',
+      'zh-Hant': '收納籃 大（3 件組）',
+    },
+  },
+  {
+    key: 'basket-set-medium',
+    kind: 'accessory',
+    archetype: 'basket',
+    itemNos: {},
+    kitKey: 'basket-set-3',
+    packQty: 1,
+    dims: { w: 120, d: 70, h: 130 },
+    placeable: true,
+    // 120 mm is exactly three pitches, so hooks at the ends is the only
+    // arrangement that lands on the grid — but too small to read off the
+    // photograph, hence still flagged estimated.
+    pattern: hanging(120, 130, 3),
+    patternEstimated: true,
+    dimsVerified: true,
+    names: {
+      en: 'Storage basket, medium (set of 3)',
+      ja: '収納バスケット 中（3個セット）',
+      'zh-Hant': '收納籃 中（3 件組）',
+    },
+  },
+  {
+    key: 'basket-set-small',
+    kind: 'accessory',
+    archetype: 'basket',
+    itemNos: {},
+    kitKey: 'basket-set-3',
+    packQty: 1,
+    dims: { w: 120, d: 60, h: 50 },
+    placeable: true,
+    pattern: hanging(120, 50, 3),
+    patternEstimated: true,
+    dimsVerified: true,
+    names: {
+      en: 'Storage basket, small (set of 3)',
+      ja: '収納バスケット 小（3個セット）',
+      'zh-Hant': '收納籃 小（3 件組）',
+    },
   },
   {
     key: 'elastic-cord',
@@ -381,7 +463,9 @@ export const ACCESSORIES: AccessoryItem[] = [
     archetype: 'bundle',
     itemNos: shared('50517760', { jp: '10517762' }),
     packQty: 1,
-    // IKEA publishes no product-level measurements for this bundle.
+    // IKEA publishes no product-level measurements for the bundle itself, only
+    // for the three baskets inside it — those are modelled as its kit members
+    // (`basket-set-large` / `-medium` / `-small`) and are what gets placed.
     dims: { w: 0, d: 0, h: 0 },
     placeable: false,
     patternEstimated: false,
@@ -428,4 +512,12 @@ export function itemNumbersFor(market: MarketId): Map<string, string> {
 
 export function isPlaceable(item: CatalogItem): item is AccessoryItem & { pattern: PegPattern } {
   return item.kind === 'accessory' && item.placeable && item.pattern !== undefined
+}
+
+/**
+ * True for a size that only exists inside another item's pack, and so has no
+ * article number and never gets a cost line of its own.
+ */
+export function isKitMember(item: CatalogItem): item is CatalogItem & { kitKey: string } {
+  return typeof item.kitKey === 'string'
 }
