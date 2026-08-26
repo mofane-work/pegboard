@@ -47,6 +47,14 @@ describe('round trip', () => {
     expect(decodeConfig(encodeConfig(priced))?.overrides).toEqual({ 'hook-large': 3.5, shelf: 0 })
   })
 
+  it('carries a negative adjustment, which is how "I already own two" travels', () => {
+    const owned = config({ extras: { 'hook-large': -2, 'connector-wall': 3 } })
+    expect(decodeConfig(encodeConfig(owned))?.extras).toEqual({
+      'hook-large': -2,
+      'connector-wall': 3,
+    })
+  })
+
   it('stays a readable string rather than an opaque blob', () => {
     const encoded = encodeConfig(config())
     expect(encoded.startsWith('v3~')).toBe(true)
@@ -76,6 +84,10 @@ describe('rejecting bad input', () => {
     ['negative override', 'v2~board-a~us~USD~~~shelf*-5~'],
     ['non-numeric override', 'v2~board-a~us~USD~~~shelf*abc~'],
     ['fractional extra quantity', 'v2~board-a~us~USD~~~~shelf*1.5'],
+    // Extras went signed so a user can say they already own some; a negative
+    // PRICE is still nonsense and must not have been relaxed along with it.
+    ['negative override, still', 'v3~board-a~us~USD~~~shelf*-0.01~'],
+    ['non-numeric extra', 'v2~board-a~us~USD~~~~shelf*abc'],
   ]
 
   for (const [name, input] of bad) {

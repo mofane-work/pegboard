@@ -1,8 +1,9 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BOARDS, type LanguageId } from '../data/catalog'
 import { boardSpec, canRotateBoard, MAX_BOARDS } from '../lib/wall'
 import { LANGUAGES } from '../i18n'
-import { useConfig, type ThemePreference } from '../state/store'
+import { MAX_BOARD_NAME_LENGTH, useConfig, type ThemePreference } from '../state/store'
 import { applyTheme } from '../lib/theme'
 
 const THEMES: ThemePreference[] = ['light', 'dark', 'system']
@@ -24,12 +25,14 @@ const THEMES: ThemePreference[] = ['light', 'dark', 'system']
 export function Toolbar({
   onResetView,
   onOpenHelp,
+  onOpenAppearance,
   onShare,
   shareState,
   shareDropped,
 }: {
   onResetView: () => void
   onOpenHelp: () => void
+  onOpenAppearance: () => void
   onShare: () => void
   shareState: 'idle' | 'copied' | 'failed'
   /** Custom placements left out of the last copied link. */
@@ -37,7 +40,7 @@ export function Toolbar({
 }) {
   const { t } = useTranslation()
   const {
-    boards, setBoard, addBoard, removeBoard, rotateBoard,
+    boards, setBoard, addBoard, removeBoard, rotateBoard, renameBoard,
     language, setLanguage,
     theme, setTheme,
     viewRatio, setViewRatio,
@@ -108,6 +111,12 @@ export function Toolbar({
             </select>
           </label>
 
+          {/* One button rather than four inline swatches: this row is already
+              four controls wide and F30/F31 record it being tight near 1000 px. */}
+          <button type="button" onClick={onOpenAppearance} aria-haspopup="dialog">
+            {t('toolbar.colours')}
+          </button>
+
           <button type="button" onClick={onOpenHelp} aria-haspopup="dialog">
             {t('toolbar.help')}
           </button>
@@ -120,11 +129,20 @@ export function Toolbar({
             const suffix = boards.length > 1 ? ` ${index + 1}` : ''
             const rotatable = canRotateBoard(placed.boardKey)
             const spec = boardSpec(placed)
+            // What this panel is called: the user's name for it, or its
+            // position on the wall. Everything that needs to refer to the board
+            // — the caption, the select, both buttons — uses this one string.
+            const display = placed.name ?? `${t('toolbar.board')}${suffix}`
             return (
-              <label key={index}>
-                <span>
-                  {t('toolbar.board')}
-                  {suffix}
+              // A <div>, not a <label>: the caption is a button now, and a
+              // button inside a label forwards its click to the select.
+              <div key={index} className="toolbar__board-field">
+                <span className="toolbar__board-caption">
+                  <BoardName
+                    display={display}
+                    value={placed.name ?? ''}
+                    onRename={(name) => renameBoard(index, name)}
+                  />
                   {/* The select names the product; this names how it hangs. */}
                   {spec.rotated && (
                     <em className="toolbar__rotated">
@@ -137,6 +155,7 @@ export function Toolbar({
                 </span>
                 <span className="toolbar__board">
                   <select
+                    aria-label={display}
                     value={placed.boardKey}
                     onChange={(e) => setBoard(e.target.value, index)}
                   >
@@ -166,7 +185,7 @@ export function Toolbar({
                     </button>
                   )}
                 </span>
-              </label>
+              </div>
             )
           })}
 
@@ -208,5 +227,67 @@ export function Toolbar({
         </div>
       </div>
     </header>
+  )
+}
+
+/**
+ * The board's caption, doubling as its name field.
+ *
+ * Click-to-edit rather than a permanently visible input: this row already holds
+ * up to three board pickers and F30/F31 record it running out of width. The
+ * input is only there while it is being used.
+ */
+function BoardName({
+  display,
+  value,
+  onRename,
+}: {
+  /** What to show when not editing — the name, or the positional fallback. */
+  display: string
+  /** The stored name, '' when unnamed, so an edit starts from the real value. */
+  value: string
+  onRename: (name: string) => void
+}) {
+  const { t } = useTranslation()
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState('')
+
+  function commit() {
+    onRename(draft)
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <input
+        type="text"
+        className="toolbar__board-name-input"
+        aria-label={t('toolbar.rename')}
+        placeholder={t('toolbar.namePlaceholder')}
+        maxLength={MAX_BOARD_NAME_LENGTH}
+        autoFocus
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') commit()
+          if (event.key === 'Escape') setEditing(false)
+        }}
+      />
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      className="toolbar__board-name"
+      title={t('toolbar.rename')}
+      onClick={() => {
+        setDraft(value)
+        setEditing(true)
+      }}
+    >
+      {display}
+    </button>
   )
 }

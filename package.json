@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "Plan a pegboard wall in 3D, drop accessories on the real peg holes, and price only the parts you still need.",
+  "description": "Plan an IKEA SKÅDIS pegboard wall in 3D, drop accessories on the real peg holes, and price only the parts you still need.",
   "homepage": "https://mofane-work.github.io/pegboard/",
   "repository": {
     "type": "git",
@@ -23,29 +23,30 @@
     "refresh-visit-count": "node scripts/refresh-visit-count.ts"
   },
   "dependencies": {
-    "@react-three/drei": "^10.7.8",
-    "@react-three/fiber": "^9.7.0",
-    "i18next": "^26.3.6",
+    "planning-with-files": "^3.10.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-i18next": "^17.0.11",
     "three": "^0.185.1",
-    "zustand": "^5.0.15"
+    "@react-three/fiber": "^9.7.0",
+    "@react-three/drei": "^10.7.8",
+    "zustand": "^5.0.15",
+    "i18next": "^26.3.6",
+    "react-i18next": "^17.0.11"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.1",
-    "@testing-library/react": "^16.3.2",
+    "typescript": "~5.9.3",
+    "vite": "^7.1.12",
+    "@vitejs/plugin-react": "^5.0.4",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@types/three": "^0.185.4",
-    "@vitejs/plugin-react": "^5.0.4",
-    "eslint": "^9.39.1",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "globals": "^16.5.0",
+    "vitest": "^3.2.4",
     "jsdom": "^26.1.0",
-    "typescript": "~5.9.3",
+    "@testing-library/react": "^16.3.2",
+    "eslint": "^9.39.1",
+    "@eslint/js": "^9.39.1",
     "typescript-eslint": "^8.46.4",
-    "vite": "^7.1.12",
-    "vitest": "^3.2.4"
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^16.5.0"
   }
 }

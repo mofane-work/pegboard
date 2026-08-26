@@ -155,7 +155,7 @@ export function decodeConfig(encoded: string): SharedConfig | null {
   }
 
   const overrides = decodePairs(overridesRaw)
-  const extras = decodePairs(extrasRaw, true)
+  const extras = decodePairs(extrasRaw, true, true)
   if (overrides === null || extras === null) return null
 
   return { boards, market, currency, placements, excluded, overrides, extras }
@@ -165,7 +165,17 @@ function splitEntries(raw: string): string[] {
   return raw === '' ? [] : raw.split(ENTRY)
 }
 
-function decodePairs(raw: string, integer = false): Record<string, number> | null {
+/**
+ * @param integer      reject a fractional value (counts, not prices)
+ * @param allowNegative accept a negative value — true only for `extras`, where
+ *   a negative is the user saying they already own some. A negative *price* is
+ *   still nonsense and stays refused.
+ */
+function decodePairs(
+  raw: string,
+  integer = false,
+  allowNegative = false,
+): Record<string, number> | null {
   const out: Record<string, number> = {}
 
   for (const entry of splitEntries(raw)) {
@@ -176,7 +186,8 @@ function decodePairs(raw: string, integer = false): Record<string, number> | nul
     if (!KEY.test(key)) return null
 
     const number = Number(value)
-    if (!Number.isFinite(number) || number < 0) return null
+    if (!Number.isFinite(number)) return null
+    if (!allowNegative && number < 0) return null
     if (integer && !Number.isInteger(number)) return null
 
     out[key] = number

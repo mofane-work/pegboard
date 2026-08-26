@@ -16,6 +16,7 @@ import {
 import { detectLanguage } from '../i18n/detect'
 import { canRotateBoard, MAX_BOARDS } from '../lib/wall'
 import type { PriceMarketId } from '../lib/pricing'
+import { CUSTOMIZABLE_TOKENS, isValidColor, type ColorOverrides } from '../lib/theme'
 import type { PriceTable } from '../lib/ikeaSearch'
 
 export interface Placement {
@@ -35,6 +36,15 @@ export interface Placement {
  */
 export interface PlacedBoard {
   boardKey: string
+  /**
+   * What the user calls this panel — "Garage", "Over the bench".
+   *
+   * Absent means unnamed, and the UI falls back to the positional "Board N".
+   * Local only: it never travels in a share link, for the same reason a custom
+   * part does not. It is one person's view of their own wall, not part of the
+   * shopping list, and keeping it out leaves the link grammar untouched.
+   */
+  name?: string
   /** Millimetres from the wall origin to this board's bottom-left corner. */
   offsetX: number
   offsetY: number
@@ -64,6 +74,35 @@ interface EditSnapshot {
 
 /** Deep enough history to be useful, bounded so it cannot grow without limit. */
 const HISTORY_LIMIT = 50
+
+/**
+ * Ceiling on a single count adjustment, in either direction.
+ *
+ * Negative is a real value, not a bug: it is how "I already own two of these"
+ * is expressed, and the cost model floors the result at zero rather than
+ * refusing it (see `countBreakdown`).
+ */
+export const MAX_EXTRA = 999
+
+/** Same ceiling a custom part's name gets, for the same layout reason. */
+export const MAX_BOARD_NAME_LENGTH = 24
+
+/**
+ * Trims, drops control characters, and caps the length. Empty becomes
+ * `undefined` rather than '' so "unnamed" has exactly one representation and
+ * the toolbar's fallback has something to test.
+ */
+export function clampBoardName(name: string | undefined): string | undefined {
+  if (typeof name !== 'string') return undefined
+  // eslint-disable-next-line no-control-regex
+  const clean = name.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, MAX_BOARD_NAME_LENGTH)
+  return clean === '' ? undefined : clean
+}
+
+function clampExtra(quantity: number): number {
+  if (!Number.isFinite(quantity)) return 0
+  return Math.max(-MAX_EXTRA, Math.min(MAX_EXTRA, Math.trunc(quantity)))
+}
 
 interface ConfigState {
   /** The wall: one or more boards side by side. Never empty. */
@@ -107,12 +146,25 @@ interface ConfigState {
    * inherit a relaxed rule set they did not choose (findings F34d).
    */
   allowOverlap: boolean
+  /**
+   * The user's own scene colours, keyed by CSS custom property.
+   *
+   * A view preference, like `theme`: persisted, but never undoable and never
+   * carried in a share link — a recipient keeps their own palette.
+   */
+  colors: ColorOverrides
 
   /** User-entered prices by catalog key. Always beat fetched prices. */
   overrides: Record<string, number>
   /** Catalog keys the user has unchecked — still listed, not counted. */
   excluded: Record<string, true>
-  /** Cost-only items (connectors, bundles) the user added without placing. */
+  /**
+   * Signed count adjustments by catalog key.
+   *
+   * Positive adds hardware that was never placed on a board. Negative says the
+   * user already owns some — the wall is unchanged and the cost drops, which is
+   * the whole point of the include/exclude checkbox taken one step finer.
+   */
   extras: Record<string, number>
 
   /** Undo/redo stacks. Session-only — never persisted. */
@@ -122,6 +174,8 @@ interface ConfigState {
   setBoard: (key: string, index?: number) => void
   /** Turn one board a quarter turn. Clears that board, like resizing it does. */
   rotateBoard: (index: number) => void
+  /** Name a board. Empty clears the name and restores "Board N". */
+  renameBoard: (index: number, name: string) => void
   addBoard: (key: string) => void
   removeBoard: (index: number) => void
   place: (itemKey: string, holeId: HoleId, rotation: Rotation, boardIndex: number) => void
@@ -147,9 +201,19 @@ interface ConfigState {
   setViewHeight: (height: number) => void
   setPrintAngle: (angle: 'front' | 'iso') => void
   setAllowOverlap: (allowOverlap: boolean) => void
+  /**
+   * Replaces every colour override at once. `{}` is the reset.
+   *
+   * Deliberately not one setter per swatch: the dialog holds a draft and
+   * commits on Save, so this is written once per confirmed change rather than
+   * on every frame of a drag through the colour picker — which is what made
+   * repainting the scene expensive.
+   */
+  setColors: (colors: ColorOverrides) => void
 
   setOverride: (key: string, price: number | null) => void
   toggleIncluded: (key: string) => void
+  /** Signed. `0` drops the adjustment entirely. */
   setExtra: (key: string, quantity: number) => void
 
   undo: () => void
@@ -251,6 +315,11 @@ export function migrateConfig(persisted: unknown, version: number): ConfigState 
   // v10 added the overlap escape hatch. Off is the rule every saved wall was
   // built under, so defaulting to false reopens it behaving identically.
   if (version < 10) state.allowOverlap ??= false
+  // v11 let a board carry a name. Nothing saved before it has one — the step
+  // exists to re-clamp, because a stored blob is not necessarily one we wrote.
+  if (version < 11) {
+    state.boards = (state.boards ?? []).map((b) => ({ ...b, name: clampBoardName(b.name) }))
+  }
   return state
 }
 
@@ -277,6 +346,7 @@ export const useConfig = create<ConfigState>()(
       viewHeight: 0.4,
       allowOverlap: false,
       printAngle: 'front',
+      colors: {},
 
       overrides: {},
       excluded: {},
@@ -338,6 +408,20 @@ export const useConfig = create<ConfigState>()(
             ),
             placements: state.placements.filter((p) => p.boardIndex !== index),
             selectedId: null,
+          }
+        }),
+
+      // Undoable for free: `EditSnapshot` already carries `boards`, and a
+      // rename is an edit to the wall like any other.
+      renameBoard: (index, name) =>
+        set((state) => {
+          if (!state.boards[index]) return state
+          const clamped = clampBoardName(name)
+          return {
+            ...remember(state),
+            boards: state.boards.map((b, i) =>
+              i === index ? { ...b, name: clamped } : b,
+            ),
           }
         }),
 
@@ -427,12 +511,29 @@ export const useConfig = create<ConfigState>()(
       setMarket: (market) => set({ market }),
       setCustomCurrency: (customCurrency) => set({ customCurrency }),
       setLanguage: (language) => set({ language }),
-      setTheme: (theme) => set({ theme }),
+      // Picking a theme also drops the user's colour overrides. That reads like
+      // a bug until you try it the other way: an override survives into a
+      // palette it was never chosen against, and the visitor who switches to
+      // dark to fix a contrast problem finds their own colours still on top of
+      // it. The theme is the reset.
+      setTheme: (theme) => set({ theme, colors: {} }),
       setViewRatio: (viewRatio) => set({ viewRatio: Math.min(0.7, Math.max(0.3, viewRatio)) }),
       setViewHeight: (viewHeight) =>
         set({ viewHeight: Math.min(1.5, Math.max(0.4, viewHeight)) }),
       setPrintAngle: (printAngle) => set({ printAngle }),
       setAllowOverlap: (allowOverlap) => set({ allowOverlap }),
+
+      // Validated here rather than only in the picker: the value ends up in a
+      // CSS custom property, and `migrate` is skipped when the stored version
+      // already matches, so a hand-edited blob would otherwise reach the page.
+      setColors: (next) => {
+        const colors: ColorOverrides = {}
+        for (const token of CUSTOMIZABLE_TOKENS) {
+          const value = next[token]
+          if (isValidColor(value)) colors[token] = value
+        }
+        set({ colors })
+      },
 
       setOverride: (key, price) =>
         set((state) => {
@@ -485,7 +586,13 @@ export const useConfig = create<ConfigState>()(
           market: config.market as PriceMarketId,
           customCurrency: config.currency,
           overrides: config.overrides,
-          extras: config.extras,
+          // Clamped rather than trusted: the decoder checks the shape of a
+          // link, but the numbers in it are still a stranger's.
+          extras: Object.fromEntries(
+            Object.entries(config.extras)
+              .map(([key, quantity]) => [key, clampExtra(quantity)] as const)
+              .filter(([, quantity]) => quantity !== 0),
+          ),
           excluded: Object.fromEntries(config.excluded.map((k) => [k, true as const])),
           selectedId: null,
           // A link is a starting point, not a step you can undo past.
@@ -496,14 +603,15 @@ export const useConfig = create<ConfigState>()(
       setExtra: (key, quantity) =>
         set((state) => {
           const extras = { ...state.extras }
-          if (quantity <= 0) delete extras[key]
-          else extras[key] = quantity
+          const clamped = clampExtra(quantity)
+          if (clamped === 0) delete extras[key]
+          else extras[key] = clamped
           return { extras }
         }),
     }),
     {
       name: 'skadis-config',
-      version: 10,
+      version: 11,
       // v1 placements predate rotation; default them to upright rather than
       // discarding a saved configuration.
       migrate: migrateConfig,

@@ -141,7 +141,7 @@ accessories cannot actually hang in those, which is noted in Help rather than bl
   overhang a board edge: that is physical, and a boundary-mounted hook is a real use case.
 - Accessories rotate in quarter turns; `rotatePattern` transforms peg offsets and the
   body rect together.
-  - **Peg spans follow the width, and photographs are the authority.** Hooks land on 40 mm
+- **Peg spans follow the width, and photographs are the authority.** Hooks land on 40 mm
   multiples, so where a body's width IS an exact multiple of 40 the hooks sit at its *ends*
   and the span is `w / 40` pitches with zero overhang; where it is not, the span is the
   largest multiple that fits and the remainder overhangs. The display shelf was inset one
@@ -170,6 +170,8 @@ that.** Resolved by decoupling language from market plus user price overrides (s
 | Price overrides | Every row editable in every market; persisted. Covers zh-Hant, second-hand buys, and any market we can't see. |
 | Catalog | Official SKÅDIS accessories only (~30 SKUs) |
 | Board orientation | Per-board `rotated` flag; lattice origins swap, dimensions swap |
+| Board names | Per-board optional `name`; local only, never in a share link |
+| Scene colours | Four user-overridable tokens; picking a theme resets them |
 
 ## Architecture
 
@@ -185,12 +187,13 @@ src/
     grid.ts               # hole lattice math, snapping, occupancy
     geometry/             # one builder per archetype
     pricing.ts            # resolution chain + pack-aware cost model
+    counts.ts             # what the wall needs (base) vs what the user buys (final)
     marketPrices.ts       # on-request live fetch + localStorage cache
     priceSnapshot.ts      # snapshot merge + the no-shrink guard
     boot.ts               # dismisses the pre-React splash in index.html
   state/store.ts          # zustand: config, market, language, overrides
   components/             # Scene, Board, AccessoryMesh, Palette, CostTable, Toolbar,
-                          #   Help, CustomPartForm, ShoppingList, PrintSheet
+                          #   Help, CustomPartForm, Appearance, ShoppingList, PrintSheet
   state/drag.ts           # drag state, separate from the persisted store
   i18n/                   # en.json, ja.json, zh-Hant.json
 public/
@@ -278,14 +281,30 @@ member**, so a wall with a large, a medium and a small needs one set, not three:
 packs = Math.max(...memberCounts)   // NOT the sum
 ```
 
-`foldKits(counts, byKey)` in `lib/pricing.ts` does that collapse, and `CostTable` calls it
-**before** reading `excluded` — the checkbox and the price override belong to the pack the
-user actually buys. Sets the user typed in by hand under the pack's own key are added on top.
+`foldKits(counts, byKey)` in `lib/pricing.ts` does that collapse, and `countBreakdown` calls it
+**before** `excluded` and before the user's own count adjustments are read — the checkbox, the
+price override and the count all belong to the pack the user actually buys. Sets typed in by
+hand under the pack's own key are added on top.
 `buildCostLines` stays dumb about kits deliberately; what makes a stray member safe is that it
 resolves to `source: 'unknown'` and is never counted as zero. Findings **F36**.
 
 Kit members are excluded from the catalog tests that assert per-market SKU coverage. That is
 correct, not a loophole: a number there would be invented.
+
+### Counts — the wall's number, and the user's
+
+`countBreakdown(boards, placements, extras, byKey)` in `lib/counts.ts` is the single answer to
+"how many". It returns **`base`** (boards + connectors + resolved placements, kit-folded — what
+the wall needs) and **`final`** (`base` plus the user's `extras`, floored at zero — what they
+buy). Both the cost table and the palette's steppers read it, so the two can never disagree
+about `connector-board`, the one cost-only item whose base is not zero.
+
+`extras` is **signed**. Editing a count in the cost table writes the *difference* from `base`,
+never the number itself, so moving an item on the board still moves its count. A negative is a
+real value — "I already own two" — and the wall is deliberately left untouched when the cost
+drops. `final` floors at zero rather than refusing, because a crafted link or a hand-edited blob
+is the only way a big negative gets in. A line that reaches zero **stays rendered**, or there is
+no control left to put it back.
 
 ### Pack quantity — the cost model is NOT per-unit
 
@@ -340,14 +359,14 @@ preview red and rejects the drop.
 
 Config autosaves to localStorage and encodes into the URL hash for sharing.
 
-**Persisted state is at `version: 9`.** Changing the stored shape means bumping it, adding a
+**Persisted state is at `version: 11`.** Changing the stored shape means bumping it, adding a
 step to `migrateConfig` (exported from `store.ts` precisely so it can be tested), and
 covering it in `state/store.test.ts`. Migration steps must stay independent and additive —
 a user four versions behind runs all of them in order. Clamp limits **in the store**, not
 only in the form: `migrate` is skipped entirely when the persisted version already matches.
 
-View preferences (`theme`, `viewRatio`, `viewHeight`, `printAngle`) are persisted but are
-**not** part of the configuration: not shared, not undoable. `viewHeight` is a *floor* on
+View preferences (`theme`, `viewRatio`, `viewHeight`, `printAngle`, `colors`) are persisted but
+are **not** part of the configuration: not shared, not undoable. `viewHeight` is a *floor* on
 the layout row, not a fixed size — the side panes sit beside the stage, so shrinking it
 would only add dead space (F26c).
 
@@ -373,5 +392,24 @@ the app isn't broken — the snapshot fallback covers it — but the catalog nee
 - Three.js world units = millimetres; scale the camera, not the geometry.
 - Theme tokens are the single source of colour truth — 3D materials read the same CSS custom
   properties as the DOM, so the scene themes with the page. No hard-coded hex in components.
+  A **selected** accessory is repainted in `--selected-color`, not glowed in its own colour;
+  the palette row for whatever is in hand or selected carries the same colour.
+- **Scene colours are chosen against each other, and `styles/tokens.test.ts` holds the floors.**
+  The one that is easy to get wrong: `--selected-color` must differ from `--accessory-color` in
+  **brightness**, not only hue — a selected item has to stand out from its *neighbours*, not
+  merely from the board, and two colours of equal luminance read as one tone under 3D lighting.
+  Numbers and the trade-offs behind the dark palette are in findings **F37g**.
+- **The four scene colours are user-overridable, and the theme is the reset.** `--scene-bg`,
+  `--board-color`, `--accessory-color` and `--selected-color` (`CUSTOMIZABLE_TOKENS` in
+  `lib/theme.ts`) are written as inline custom properties on `<html>` by `applyColors`, above
+  whatever the theme defined; `setTheme` clears them. `--snap-ok` / `--snap-bad` stay out of the
+  picker — they mean legal/illegal, not decoration. Values are validated as six-digit hex **in
+  the store**, because they end up in a CSS custom property. `useThemeTokens` watches
+  `data-theme` *and* `style` on the root, or the DOM recolours while the scene does not — and it
+  compares before it re-renders, which is what makes watching `style` affordable at all.
+- **The colour dialog holds a draft and commits on Save**, through one `setColors` call. React
+  maps `onChange` on `<input type="color">` to the native `input` event, so a live-applied
+  picker rebuilds every material in the scene on every frame of a drag. There is deliberately
+  no live preview; Cancel discards, and Reset clears the swatches but still waits for Save.
 - Every `catalog.ts` entry needs a real source for its dimensions. If a dimension is a guess,
   mark it `// UNVERIFIED` and log it in `findings.md`.

@@ -2,13 +2,11 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BY_KEY } from '../data/catalog'
 import { isCustomKey } from '../data/customParts'
-import { resolvePlacements } from '../lib/placements'
-import { buildWall, connectorsNeeded, layoutBoards } from '../lib/wall'
+import { countBreakdown } from '../lib/counts'
 import snapshotJson from '../data/price-snapshot.json'
 import { INTL_LOCALE } from '../i18n'
 import {
   buildCostLines,
-  foldKits,
   formatPrice,
   totalCost,
   type CostInput,
@@ -37,7 +35,7 @@ export function CostTable({ onPrint }: { onPrint: () => void }) {
   const {
     boards, placements, extras, market, customCurrency,
     language, overrides, excluded, setOverride, toggleIncluded,
-    setMarket, setCustomCurrency,
+    setMarket, setCustomCurrency, setExtra,
   } = useConfig()
   const printAngle = useConfig((s) => s.printAngle)
   const setPrintAngle = useConfig((s) => s.setPrintAngle)
@@ -53,49 +51,15 @@ export function CostTable({ onPrint }: { onPrint: () => void }) {
     [placements],
   )
 
-  const { entries, kitSets } = useMemo<{ entries: CostInput[]; kitSets: number }>(() => {
-    const counts = new Map<string, number>()
-    for (const board of boards) {
-      counts.set(board.boardKey, (counts.get(board.boardKey) ?? 0) + 1)
-    }
+  const { base, final, kitSets } = useMemo(
+    () => countBreakdown(boards, placements, extras, BY_KEY),
+    [boards, placements, extras],
+  )
 
-    // Joining boards needs hardware; forgetting it is how you get home from
-    // IKEA with a wall you cannot actually assemble.
-    const connectors = connectorsNeeded(boards.length)
-    if (connectors > 0) {
-      counts.set('connector-board', (counts.get('connector-board') ?? 0) + connectors)
-    }
-
-    // Count what the scene actually renders, via the same resolver, so an item
-    // can never be charged for while being invisible on the wall.
-    const wall = buildWall(layoutBoards(boards))
-    for (const { item } of resolvePlacements(placements, wall)) {
-      if (isCustomKey(item.key)) continue
-      counts.set(item.key, (counts.get(item.key) ?? 0) + 1)
-    }
-    for (const [key, qty] of Object.entries(extras)) {
-      counts.set(key, (counts.get(key) ?? 0) + qty)
-    }
-    // Placed basket sizes become sets of 3 here, before the include/exclude
-    // flags are read: the checkbox and the price override belong to the pack
-    // the user actually buys, not to a size IKEA does not sell on its own.
-    const folded = foldKits(counts, BY_KEY)
-
-    // How much of the wall is only buyable as a kit, for the footnote. Read off
-    // the difference the fold made rather than recounting, so the note can
-    // never disagree with the line it explains. Untouched keys contribute zero.
-    let kitSets = 0
-    for (const [key, quantity] of folded) kitSets += quantity - (counts.get(key) ?? 0)
-
-    return {
-      kitSets,
-      entries: [...folded].map(([key, quantity]) => ({
-        key,
-        quantity,
-        included: !excluded[key],
-      })),
-    }
-  }, [boards, placements, extras, excluded])
+  const entries = useMemo<CostInput[]>(
+    () => [...final].map(([key, quantity]) => ({ key, quantity, included: !excluded[key] })),
+    [final, excluded],
+  )
 
   const currency =
     market === 'custom' ? customCurrency : (snapshot.markets[market]?.currency ?? 'USD')
@@ -175,6 +139,7 @@ export function CostTable({ onPrint }: { onPrint: () => void }) {
               <tr>
                 <th scope="col"><span className="sr-only">{t('cost.included')}</span></th>
                 <th scope="col">{t('cost.item')}</th>
+                <th scope="col">{t('cost.qty')}</th>
                 <th scope="col">{t('cost.packs')}</th>
                 <th scope="col">{t('cost.price')}</th>
                 <th scope="col">{t('cost.lineTotal')}</th>
@@ -187,6 +152,13 @@ export function CostTable({ onPrint }: { onPrint: () => void }) {
                   line={line}
                   locale={locale}
                   name={line.item.names[language]}
+                  adjusted={extras[line.key] ?? 0}
+                  // An edit writes the DIFFERENCE from what the wall needs, not
+                  // the number itself, so moving an item on the board still
+                  // moves the count with it.
+                  onQuantity={(target) =>
+                    setExtra(line.key, target === null ? 0 : target - (base.get(line.key) ?? 0))
+                  }
                   onOverride={(value) => setOverride(line.key, value)}
                   onToggle={() => toggleIncluded(line.key)}
                 />
@@ -198,7 +170,14 @@ export function CostTable({ onPrint }: { onPrint: () => void }) {
 
       <footer className="cost__footer">
         <span>{t('cost.grandTotal')}</span>
-        <strong data-testid="grand-total">{formatPrice(total.total, currency, locale)}</strong>
+        <span className="cost__footer-total">
+          <strong data-testid="grand-total">{formatPrice(total.total, currency, locale)}</strong>
+          {/* What you are carrying out, next to what you are paying. Counted
+              over every checked line, including any whose price is unknown. */}
+          <span className="cost__footer-packs" data-testid="total-packs">
+            {t('cost.totalPacks', { count: total.packs })}
+          </span>
+        </span>
       </footer>
 
       {total.unknownKeys.length > 0 && (
@@ -247,18 +226,26 @@ function Row({
   line,
   locale,
   name,
+  adjusted,
+  onQuantity,
   onOverride,
   onToggle,
 }: {
   line: CostLine
   locale: string
   name: string
+  /** The user's signed adjustment for this line, 0 when it matches the wall. */
+  adjusted: number
+  /** `null` clears the adjustment and goes back to what the wall needs. */
+  onQuantity: (target: number | null) => void
   onOverride: (value: number | null) => void
   onToggle: () => void
 }) {
   const { t } = useTranslation()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
+  const [editingQty, setEditingQty] = useState(false)
+  const [qtyDraft, setQtyDraft] = useState('')
 
   const overridden = line.price.source === 'override'
   const unknown = line.price.amount === null
@@ -267,6 +254,14 @@ function Row({
     const parsed = Number.parseFloat(draft)
     onOverride(Number.isFinite(parsed) && parsed >= 0 ? parsed : null)
     setEditing(false)
+  }
+
+  function commitQty() {
+    const parsed = Number.parseInt(qtyDraft, 10)
+    // Anything that is not a count clears the adjustment rather than being
+    // guessed at — the same way an unparseable price clears the override.
+    onQuantity(Number.isFinite(parsed) && parsed >= 0 ? parsed : null)
+    setEditingQty(false)
   }
 
   return (
@@ -287,45 +282,91 @@ function Row({
           </span>
         )}
       </td>
+      <td className="cost__num">
+        <span className="cost__cell">
+          {editingQty ? (
+            <input
+              className="cost__input"
+              type="number"
+              min={0}
+              step={1}
+              autoFocus
+              aria-label={`${t('cost.qty')}: ${name}`}
+              value={qtyDraft}
+              onChange={(e) => setQtyDraft(e.target.value)}
+              onBlur={commitQty}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') commitQty()
+                if (e.key === 'Escape') setEditingQty(false)
+              }}
+            />
+          ) : (
+            <button
+              type="button"
+              className="cost__qty"
+              data-testid="qty-edit"
+              aria-label={`${t('cost.qty')}: ${name}`}
+              title={adjusted !== 0 ? t('cost.adjusted') : t('cost.editQty')}
+              onClick={() => {
+                setQtyDraft(String(line.quantity))
+                setEditingQty(true)
+              }}
+            >
+              {line.quantity}
+            </button>
+          )}
+          {/* A sibling of the button, not a child: as a block inside it the
+              badge broke the button's own box, and it has to line up with the
+              reset below it rather than with the number's padding. */}
+          {adjusted !== 0 && <span className="cost__badge">{t('cost.adjusted')}</span>}
+          {adjusted !== 0 && (
+            <button type="button" className="cost__reset" onClick={() => onQuantity(null)}>
+              {t('cost.resetQty')}
+            </button>
+          )}
+        </span>
+      </td>
       <td className="cost__num">{line.packs}</td>
       <td className="cost__num">
-        {editing ? (
-          <input
-            className="cost__input"
-            type="number"
-            min={0}
-            step="0.01"
-            autoFocus
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={commit}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') commit()
-              if (e.key === 'Escape') setEditing(false)
-            }}
-          />
-        ) : (
-          <button
-            type="button"
-            className="cost__price"
-            data-testid="price-edit"
-            title={overridden ? t('cost.yourPrice') : t('cost.edit')}
-            onClick={() => {
-              setDraft(line.price.amount === null ? '' : String(line.price.amount))
-              setEditing(true)
-            }}
-          >
-            {unknown
-              ? t('cost.unknown')
-              : formatPrice(line.price.amount!, line.price.currency, locale)}
-            {overridden && <span className="cost__badge">{t('cost.yourPrice')}</span>}
-          </button>
-        )}
-        {overridden && (
-          <button type="button" className="cost__reset" onClick={() => onOverride(null)}>
-            {t('cost.reset')}
-          </button>
-        )}
+        <span className="cost__cell">
+          {editing ? (
+            <input
+              className="cost__input"
+              type="number"
+              min={0}
+              step="0.01"
+              autoFocus
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onBlur={commit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') commit()
+                if (e.key === 'Escape') setEditing(false)
+              }}
+            />
+          ) : (
+            <button
+              type="button"
+              className="cost__price"
+              data-testid="price-edit"
+              title={overridden ? t('cost.yourPrice') : t('cost.edit')}
+              onClick={() => {
+                setDraft(line.price.amount === null ? '' : String(line.price.amount))
+                setEditing(true)
+              }}
+            >
+              {unknown
+                ? t('cost.unknown')
+                : formatPrice(line.price.amount!, line.price.currency, locale)}
+            </button>
+          )}
+          {overridden && <span className="cost__badge">{t('cost.yourPrice')}</span>}
+          {overridden && (
+            <button type="button" className="cost__reset" onClick={() => onOverride(null)}>
+              {t('cost.reset')}
+            </button>
+          )}
+        </span>
       </td>
       <td className="cost__num">
         {line.lineTotal === null

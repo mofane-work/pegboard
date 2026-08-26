@@ -52,11 +52,69 @@ interface CounterDump {
   sites?: Record<string, { count?: number }>
 }
 
-const user = process.env.COUNTER_DEV_USER
-const token = process.env.COUNTER_DEV_TOKEN
+/**
+ * Normalises a pasted credential. Both of these present identically — as a
+ * `nouser` event — and neither is visible in the stored value:
+ *
+ * - **Whitespace.** A trailing newline survives a paste into a GitHub secret.
+ * - **Percent-encoding.** The dashboard hands you a URL, not two fields, and
+ *   `share-account.js` builds it with `encodeURIComponent`. The token is
+ *   base64url of 8 bytes, so it ends in one `=` pad — which appears in that URL
+ *   as `%3D`. Copy that literally and this script encodes it again to `%253D`,
+ *   the server decodes it once, and the comparison fails on the last character.
+ *   `%` is not a base64url character, so seeing one can only mean the value is
+ *   still encoded; decoding is always the right move.
+ *
+ * The whole share URL is also accepted in either variable, since a URL is the
+ * only thing counter.dev actually gives you to copy.
+ */
+function credential(name: 'user' | 'token', raw: string | undefined): string {
+  let value = (raw ?? '').trim()
+  if (/^https?:\/\//i.test(value)) {
+    try {
+      value = new URL(value).searchParams.get(name) ?? value
+    } catch {
+      // Not a URL after all — fall through and let the server judge it.
+    }
+  }
+  if (value.includes('%')) {
+    try {
+      value = decodeURIComponent(value)
+    } catch {
+      // A lone `%`. Leave it alone rather than guess.
+    }
+  }
+  return value
+}
+
+// const user = credential('user', process.env.COUNTER_DEV_USER)
+// const token = credential('token', process.env.COUNTER_DEV_TOKEN)
+const user = credential('user', "mofane.work")
+const token = credential('token', "pxof-Zlpzk8%3D")
 if (!user || !token) {
   console.error('COUNTER_DEV_USER and COUNTER_DEV_TOKEN must both be set')
   process.exit(1)
+}
+
+/**
+ * What to check when the share credentials bounce. Worth spelling out because
+ * the obvious test does not test anything: `/dump` prefers the share token but
+ * falls back to the dashboard session, so opening the share link in a browser
+ * you are logged into succeeds no matter what the token says.
+ */
+function explainNoUser(): string {
+  return [
+    `  sent user="${user}", token=${token.length} chars ending "${token.slice(-3)}"`,
+    '  - COUNTER_DEV_USER is the username you log in with — not the sign-up',
+    '    email, not the data-id UUID, not the site domain.',
+    '  - COUNTER_DEV_TOKEN exists only once guest access is switched on, and a',
+    '    later Share/Remove issues a new one. Re-copy it if in doubt.',
+    '  - Take the token from the share URL DECODED: a trailing "=" is right,',
+    "    a trailing \"%3D\" is the URL's encoding of it and will be rejected.",
+    '  - To test the link by hand, use a private window. A real guest view says',
+    '    "You are viewing <user>\'s dashboard as guest"; anything else means',
+    '    your session cookie logged you in and the token was never checked.',
+  ].join('\n')
 }
 
 /** The number already on the README, or 0 the first time this runs. */
@@ -76,8 +134,8 @@ async function previousCount(): Promise<number> {
  */
 async function fetchDump(): Promise<CounterDump | null> {
   const url = new URL('https://counter.dev/dump')
-  url.searchParams.set('user', user!)
-  url.searchParams.set('token', token!)
+  url.searchParams.set('user', user)
+  url.searchParams.set('token', token)
   url.searchParams.set('utcoffset', '0')
 
   const abort = new AbortController()
@@ -116,6 +174,7 @@ async function fetchDump(): Promise<CounterDump | null> {
         // but not at the cost of a red run — say so loudly and leave the file.
         if (event.type === 'nouser') {
           console.error('counter.dev rejected the credentials (type: nouser)')
+          console.error(explainNoUser())
           return null
         }
         if (event.type === 'dump') return event.payload as CounterDump

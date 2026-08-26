@@ -278,6 +278,49 @@
   color: var(--color-text-muted);
 }
 
+/* Was a <label>; the caption is a rename button now, so the caption-above-
+   control shape has to be stated rather than inherited from the label rule. */
+.toolbar__board-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.toolbar__board-caption {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);
+}
+
+.toolbar__board-name {
+  max-width: 12rem;
+  padding: 0 2px;
+  border: 1px solid transparent;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: text;
+}
+
+.toolbar__board-name:hover {
+  border-color: var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+/* Wide enough for MAX_BOARD_NAME_LENGTH, plus the shared control padding —
+   the same border-box trap .cost__input documents. */
+.toolbar__board-name-input {
+  width: calc(12ch + var(--space-2) * 2 + 2px);
+  padding-inline: var(--space-2);
+  font-size: var(--font-size-sm);
+}
+
 /* Select plus its orientation and remove buttons, kept on one line. */
 .toolbar__board {
   display: flex;
@@ -423,6 +466,17 @@
   border-color: var(--color-accent);
 }
 
+/* The row for whatever is in hand or selected on the board, in the same colour
+   the 3D pane repaints that component with — so the two panes agree. */
+.palette__item--picked {
+  border-color: var(--selected-color);
+  box-shadow: inset 3px 0 0 var(--selected-color);
+}
+
+.palette__item--picked .palette__name {
+  color: var(--selected-color);
+}
+
 .palette__name {
   font-size: var(--font-size-sm);
 }
@@ -512,12 +566,25 @@
   font-size: var(--font-size-sm);
 }
 
+/* Asymmetric on purpose. Every column is start-aligned, so the gap a reader
+   sees between two columns is the left one's trailing padding plus the right
+   one's leading padding — 4px + 4px ran "Buy" straight into the price. The
+   trailing edge does the separating; the leading edge stays tight so the table
+   still fits a 240px pane. 12px + 4px is a 16px gutter for 48px of extra table
+   width — `--space-4` would read better and scroll sooner. */
 .cost__table th,
 .cost__table td {
-  padding: var(--space-2) var(--space-1);
+  padding-block: var(--space-2);
+  padding-inline: var(--space-1) var(--space-3);
   border-bottom: 1px solid var(--color-border);
   text-align: start;
   vertical-align: top;
+}
+
+/* Nothing follows the last column, so its trailing gutter is only dead width. */
+.cost__table th:last-child,
+.cost__table td:last-child {
+  padding-inline-end: var(--space-1);
 }
 
 .cost__table th {
@@ -525,8 +592,12 @@
   font-weight: 500;
 }
 
+/* Deliberately NOT end-aligned. The column headings are start-aligned like
+   every other `th`, so a right-aligned value already sat under nothing — and
+   the Qty and Price cells hold buttons of differing widths, which made the
+   ragged edge obvious. Everything on the numeric side starts at the same
+   place; `tabular-nums` is what keeps the digits themselves lined up. */
 .cost__num {
-  text-align: end;
   font-variant-numeric: tabular-nums;
 }
 
@@ -544,32 +615,60 @@
   font-size: 0.75rem;
 }
 
+/* Number, badge and reset stacked at the column's start.
+   `align-items: flex-start` puts every BOX at x=0, but what has to line up is
+   the TEXT, and a box insets its own text by its border plus its padding. The
+   previous attempts gave all four the same inset and trusted them to stay the
+   same, which is a thing that agrees by accident and drifts on the next edit.
+   So: no inset at all. Zero padding and no border means text starts at x=0 for
+   every one of them and for the column heading above them, whatever element
+   they happen to be — and there is nothing left to keep in step.
+   That is why hover is an OUTLINE below: outlines do not take part in layout,
+   so the affordance costs no padding that would put the inset back. */
+.cost__cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
 .cost__price,
+.cost__qty,
+.cost__reset,
+.cost__badge {
+  padding: 0;
+  border: 0;
+}
+
+.cost__price,
+.cost__qty,
 .cost__reset {
-  padding: 2px var(--space-1);
-  border: 1px solid transparent;
   background: none;
   color: inherit;
   font: inherit;
   cursor: pointer;
+  /* A button centres its own text by UA rule, which inheritance cannot reach. */
+  text-align: start;
 }
 
 .cost__price:hover,
+.cost__qty:hover,
 .cost__reset:hover {
-  border-color: var(--color-border);
+  outline: 1px solid var(--color-border);
+  outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
 
 .cost__reset {
-  display: block;
   color: var(--color-accent);
   font-size: 0.7rem;
 }
 
+/* Box comes from the shared rule above; this is only how it reads. */
 .cost__badge {
-  display: block;
   color: var(--color-accent);
   font-size: 0.7rem;
+  line-height: 1.2;
 }
 
 /* Same border-box trap as .cost__currency: the shared control padding has to be
@@ -582,6 +681,7 @@
   padding-inline: var(--space-2);
   appearance: textfield;
 }
+
 
 .cost__input::-webkit-outer-spin-button,
 .cost__input::-webkit-inner-spin-button {
@@ -596,6 +696,17 @@
   padding-top: var(--space-2);
   border-top: 2px solid var(--color-border);
   font-size: var(--font-size-lg);
+}
+
+.cost__footer-total {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.cost__footer-packs {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
 }
 
 /* ---- Shared controls ---- */
@@ -1006,6 +1117,70 @@ select:hover {
   margin-inline-end: auto;
   border-color: var(--color-danger);
   color: var(--color-danger);
+}
+
+/* Appearance dialog — same platform-dialog approach as .custom and .help */
+.appearance {
+  max-width: 26rem;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.appearance::backdrop {
+  background: rgb(0 0 0 / 45%);
+}
+
+.appearance__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+}
+
+.appearance__body h2 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+}
+
+.appearance__hint {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.appearance__field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--font-size-sm);
+}
+
+.appearance__field input[type='color'] {
+  inline-size: 3rem;
+  block-size: 2rem;
+  padding: 2px;
+  cursor: pointer;
+}
+
+.appearance__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.appearance__reset {
+  margin-inline-end: auto;
+}
+
+.appearance__save {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-contrast);
 }
 
 .palette__custom-add {

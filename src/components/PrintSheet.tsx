@@ -62,7 +62,11 @@ export function PrintSheet({ lines, total, market, currency, angle }: PrintSheet
           {laid
             .map((b) => {
               const spec = boardSpec(b)
-              const name = BY_KEY.get(b.boardKey)?.names[language]
+              const product = BY_KEY.get(b.boardKey)?.names[language]
+              // The user's own name first, if they gave one — but never
+              // instead of the product. This is a build document: whoever
+              // assembles the wall still has to know which panel to buy.
+              const name = b.name ? `${b.name} · ${product}` : product
               // A turned panel is the same product but a different build, so
               // the sheet has to say which way up it goes.
               if (!spec.rotated) return name

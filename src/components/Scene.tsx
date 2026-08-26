@@ -167,6 +167,7 @@ export function Scene({
               item={item}
               pattern={basePattern}
               color={tokens['--accessory-color']}
+              selectedColor={tokens['--selected-color']}
               selected={placement.id === selectedId}
               onPointerDown={(event) => {
                 event.stopPropagation()

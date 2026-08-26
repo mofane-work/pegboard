@@ -22,7 +22,10 @@
     "removeBoard": "Remove board",
     "rotateBoard": "Rotate board",
     "rotateBoardFixed": "The free-standing board cannot be turned sideways.",
-    "rotatedAs": "turned — {{width}}×{{height}}"
+    "rename": "Rename board",
+    "namePlaceholder": "Board name",
+    "rotatedAs": "turned — {{width}}×{{height}}",
+    "colours": "Colours"
   },
   "market": {
     "us": "IKEA US (USD)",
@@ -37,6 +40,18 @@
     "light": "Light",
     "dark": "Dark",
     "system": "System"
+  },
+  "appearance": {
+    "title": "Colours",
+    "hint": "Repaint the 3D pane. Nothing changes until you press Save. These stay on this device — they never travel in a share link.",
+    "background": "Pane background",
+    "board": "Board",
+    "accessory": "Components",
+    "selected": "Selected component",
+    "themeNote": "Changing the theme puts these back to its own colours.",
+    "reset": "Reset to theme",
+    "cancel": "Cancel",
+    "save": "Save"
   },
   "palette": {
     "title": "Accessories",
@@ -83,14 +98,18 @@
     "price": "Price",
     "lineTotal": "Total",
     "grandTotal": "Total",
+    "totalPacks": "{{count}} pack(s)",
     "empty": "Nothing on the board yet.",
     "packNote": "{{qty}} × {{pack}}-pack",
     "unknown": "—",
     "unknownNote": "{{count}} item(s) have no price and are not counted.",
     "yourPrice": "your price",
+    "adjusted": "adjusted",
     "stale": "Prices captured {{date}}. Refresh for today’s.",
     "edit": "Set price",
+    "editQty": "Set count",
     "reset": "Use IKEA price",
+    "resetQty": "Use board count",
     "included": "Include in total",
     "kitNote": "The three basket sizes only come together — {{count}} set(s) of 3 covers what is on the board.",
     "uncheckedHint": "Uncheck what you already own to price only the upgrade."
@@ -149,7 +168,10 @@
     "b8": "On a touch screen, tap a placed item to select it — arrows, rotate and delete appear over the 3D view.",
     "s8": "Arrow keys — move the selected item one hole at a time",
     "b9": "Tap + beside any accessory to drop it on the board without dragging, then move it with the arrows.",
-    "b10": "Allow items to overlap lets you move something past its neighbours. Pegs still have to land in real slots, and it is never carried in a share link."
+    "b10": "Allow items to overlap lets you move something past its neighbours. Pegs still have to land in real slots, and it is never carried in a share link.",
+    "b11": "Click a board’s name to rename it — “Garage”, “Over the bench”. Names stay in this browser and never travel in a share link.",
+    "b12": "Colours in the top bar repaints the 3D view. Switching theme puts those colours back to the theme’s own.",
+    "p6": "Click any count to change it. Setting it below what is on the board says you already own some — the wall is untouched, only the price drops."
   },
   "list": {
     "title": "Procurement list",

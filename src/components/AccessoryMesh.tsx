@@ -8,6 +8,8 @@ interface AccessoryMeshProps {
   /** Unrotated pattern — the frame shift is applied inside the rotated group. */
   pattern: PegPattern
   color: string
+  /** Repaints the whole body while selected, rather than tinting it. */
+  selectedColor?: string
   opacity?: number
   selected?: boolean
   onPointerDown?: (event: { stopPropagation: () => void }) => void
@@ -21,12 +23,18 @@ export function AccessoryMesh({
   item,
   pattern,
   color,
+  selectedColor,
   opacity = 1,
   selected = false,
   onPointerDown,
 }: AccessoryMeshProps) {
   const parts = useMemo(() => buildAccessoryParts(item), [item])
   const transparent = opacity < 1
+
+  // Selection repaints the body rather than glowing it in its own colour: an
+  // emissive tint of `color` is nearly invisible on a bright board. The glow
+  // stays, at the same hue, so the shape still reads in a dark scene.
+  const bodyColor = selected && selectedColor ? selectedColor : color
 
   // The builders draw in the body's own frame; this puts that frame where the
   // pattern says the body sits relative to the anchor peg (findings.md F11).
@@ -43,13 +51,13 @@ export function AccessoryMesh({
           castShadow={!transparent}
         >
           <meshStandardMaterial
-            color={color}
+            color={bodyColor}
             roughness={0.6}
             metalness={0.05}
             transparent={transparent}
             opacity={opacity}
             depthWrite={!transparent}
-            emissive={selected ? color : '#000000'}
+            emissive={bodyColor}
             emissiveIntensity={selected ? 0.35 : 0}
           />
         </mesh>

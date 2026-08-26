@@ -60,6 +60,8 @@ function resetStore() {
     // Same trap: left out, the share-link test's `true` leaked forward and
     // quick-place happily stacked two items on one slot.
     allowOverlap: false,
+    // And again: an Appearance test's override would repaint every later test.
+    colors: {},
   })
 }
 
@@ -892,6 +894,157 @@ describe('App shell', () => {
     expect(rows.filter((r) => r.includes('Storage basket, large'))).toEqual([])
     expect(rows.some((r) => r.includes('Storage basket, set of 3'))).toBe(true)
     expect(screen.getByText(/set\(s\) of 3 covers what is on the board/)).toBeTruthy()
+  })
+
+  it('totals the packs to carry out, next to what they cost', () => {
+    render(<App />)
+    // One board, plus 3 hooks — a 2-pack, so 2 packs. Three things in a basket.
+    for (let i = 0; i < 3; i++) {
+      fireEvent.click(screen.getByRole('button', { name: 'Place on board: Hook, large' }))
+    }
+    expect(screen.getByTestId('total-packs').textContent).toBe('3 pack(s)')
+  })
+
+  it('prices only the upgrade when you already own some of what is on the wall', () => {
+    render(<App />)
+    for (let i = 0; i < 6; i++) {
+      fireEvent.click(screen.getByRole('button', { name: 'Place on board: Hook, large' }))
+    }
+    const before = screen.getByTestId('grand-total').textContent
+
+    // Say two of the six are already in the drawer. 6 hooks was 3 × 2-pack;
+    // 4 is 2 packs.
+    fireEvent.click(screen.getByRole('button', { name: 'Qty: Hook, large' }))
+    fireEvent.change(screen.getByLabelText('Qty: Hook, large'), { target: { value: '4' } })
+    fireEvent.keyDown(screen.getByLabelText('Qty: Hook, large'), { key: 'Enter' })
+
+    expect(useConfig.getState().extras['hook-large']).toBe(-2)
+    // The board is untouched: the wall still shows six.
+    expect(useConfig.getState().placements).toHaveLength(6)
+    expect(screen.getByTestId('grand-total').textContent).not.toBe(before)
+
+    // And it can be handed back.
+    fireEvent.click(screen.getByRole('button', { name: 'Use board count' }))
+    expect('hook-large' in useConfig.getState().extras).toBe(false)
+    expect(screen.getByTestId('grand-total').textContent).toBe(before)
+  })
+
+  it('adds to a count from the cost table, for parts bought spare', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Place on board: Hook, large' }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Qty: Hook, large' }))
+    fireEvent.change(screen.getByLabelText('Qty: Hook, large'), { target: { value: '5' } })
+    fireEvent.keyDown(screen.getByLabelText('Qty: Hook, large'), { key: 'Enter' })
+
+    expect(useConfig.getState().extras['hook-large']).toBe(4)
+    expect(useConfig.getState().placements).toHaveLength(1)
+  })
+
+  it('keeps a zeroed line on screen, or there is no way to put it back', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Place on board: Hook, large' }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Qty: Hook, large' }))
+    fireEvent.change(screen.getByLabelText('Qty: Hook, large'), { target: { value: '0' } })
+    fireEvent.keyDown(screen.getByLabelText('Qty: Hook, large'), { key: 'Enter' })
+
+    expect(screen.getByRole('button', { name: 'Qty: Hook, large' }).textContent).toContain('0')
+  })
+
+  it('names a board, and says so on the build sheet', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Board' }))
+    fireEvent.change(screen.getByLabelText('Rename board'), { target: { value: 'Garage' } })
+    fireEvent.keyDown(screen.getByLabelText('Rename board'), { key: 'Enter' })
+
+    expect(useConfig.getState().boards[0].name).toBe('Garage')
+    expect(screen.getByRole('button', { name: 'Garage' })).toBeTruthy()
+    // The sheet keeps the product too: it is what somebody has to go and buy.
+    expect(screen.getByText(/Garage · Pegboard 56×56/)).toBeTruthy()
+  })
+
+  it('leaves the name alone when the rename is abandoned', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Board' }))
+    fireEvent.change(screen.getByLabelText('Rename board'), { target: { value: 'Garage' } })
+    fireEvent.keyDown(screen.getByLabelText('Rename board'), { key: 'Escape' })
+
+    expect(useConfig.getState().boards[0].name).toBeUndefined()
+  })
+
+  it('numbers the boards again once a name is cleared', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Board' }))
+    fireEvent.change(screen.getByLabelText('Rename board'), { target: { value: 'Garage' } })
+    fireEvent.blur(screen.getByLabelText('Rename board'))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Garage' }))
+    fireEvent.change(screen.getByLabelText('Rename board'), { target: { value: '  ' } })
+    fireEvent.keyDown(screen.getByLabelText('Rename board'), { key: 'Enter' })
+
+    expect(screen.getByRole('button', { name: 'Board' })).toBeTruthy()
+  })
+
+  /** Open Colours and set the board swatch, without saving. */
+  function pickBoardColour(value: string) {
+    fireEvent.click(screen.getByRole('button', { name: 'Colours' }))
+    // Scoped: 'Board' also labels the board picker out in the toolbar.
+    const dialog = screen.getByRole('dialog')
+    fireEvent.change(within(dialog).getByLabelText('Board'), { target: { value } })
+    return dialog
+  }
+
+  it('repaints the scene from the Colours dialog, and the theme takes it back', async () => {
+    render(<App />)
+    pickBoardColour('#123456')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    expect(useConfig.getState().colors['--board-color']).toBe('#123456')
+    // Awaited, not asserted straight away: the scene picks the change up through
+    // a MutationObserver on the root's style, which lands a tick later.
+    await waitFor(() =>
+      expect(document.documentElement.style.getPropertyValue('--board-color')).toBe('#123456'),
+    )
+
+    // Picking a theme is the reset: an override must not survive into a palette
+    // it was never chosen against.
+    fireEvent.change(screen.getByLabelText('Theme'), { target: { value: 'dark' } })
+    expect(useConfig.getState().colors).toEqual({})
+    await waitFor(() =>
+      expect(document.documentElement.style.getPropertyValue('--board-color')).toBe(''),
+    )
+  })
+
+  it('changes nothing until Save, because a colour drag fires on every frame', () => {
+    render(<App />)
+    // React maps onChange on a colour input to the native `input` event, so a
+    // live-applied picker rebuilt every material in the scene dozens of times
+    // per drag. Dragging must reach the store exactly never.
+    pickBoardColour('#123456')
+    expect(useConfig.getState().colors).toEqual({})
+    expect(document.documentElement.style.getPropertyValue('--board-color')).toBe('')
+  })
+
+  it('throws the draft away on Cancel', () => {
+    render(<App />)
+    pickBoardColour('#123456')
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(useConfig.getState().colors).toEqual({})
+  })
+
+  it('resets the swatches back to the theme, and still waits for Save', () => {
+    render(<App />)
+    // Wrapped: a store write from outside an event is not batched into a render.
+    act(() => useConfig.setState({ colors: { '--board-color': '#123456' } }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Colours' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Reset to theme' }))
+    // One rule: nothing happens until Save.
+    expect(useConfig.getState().colors).toEqual({ '--board-color': '#123456' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    expect(useConfig.getState().colors).toEqual({})
   })
 
 })

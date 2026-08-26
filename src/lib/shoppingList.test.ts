@@ -115,6 +115,29 @@ describe('text export', () => {
     expect(out).toContain('└ 2-pack · 6 pieces')
   })
 
+  it('totals the packs in the pack column, under the per-row counts', () => {
+    // Two boards plus 6 hooks (2-pack) plus a shelf: 2 + 3 + 1 = 6 packs.
+    const out = buildShoppingList(
+      lines([
+        ['board-56x56-white', 2, true],
+        ['hook-large', 6, true],
+        ['shelf', 1, true],
+      ]),
+      options(),
+    )
+    const totalRow = out.split('\n').find((l) => l.includes('Total'))!
+    expect(totalRow).toMatch(/^\s+6 ×\s+Total/)
+  })
+
+  it('counts a pack whose price is unknown — it is still carried out', () => {
+    const out = buildShoppingList(
+      lines([['shelf', 1, true], ['accessory-set-7', 1, true]], {}, 'jp'),
+      options({ market: 'jp', currency: 'JPY', unknownKeys: ['accessory-set-7'] }),
+    )
+    const totalRow = out.split('\n').find((l) => l.includes('Total'))!
+    expect(totalRow).toMatch(/^\s+2 ×/)
+  })
+
   it('omits the pack sub-line for single items', () => {
     const out = buildShoppingList(lines([['shelf', 1, true]]), options())
     expect(out).not.toContain('└')

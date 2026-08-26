@@ -14,8 +14,11 @@
 #
 # SETUP (all three are placeholders until you do this):
 #   Settings → Secrets and variables → Actions
-#     Secret   COUNTER_DEV_USER   — your counter.dev username
-#     Secret   COUNTER_DEV_TOKEN  — Dashboard → share/API token
+#     Secret   COUNTER_DEV_USER   — your counter.dev username (the login name;
+#                                   not the sign-up email, not the data-id)
+#     Secret   COUNTER_DEV_TOKEN  — Dashboard → the eye row → Share → Copy url,
+#                                   then take the token DECODED: it ends in "="
+#                                   and the URL writes that as "%3D" (F38b)
 #     Variable COUNTER_DEV_ID     — the site token the tracker script uses
 #                                   (read by deploy-pages.yml, not by this file)
 #     Variable COUNTER_DEV_SITE   — optional; one site key to count instead of

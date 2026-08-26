@@ -5,6 +5,7 @@ import { Palette } from './components/Palette'
 import { CostTable } from './components/CostTable'
 import { Help } from './components/Help'
 import { CustomPartForm } from './components/CustomPartForm'
+import { Appearance } from './components/Appearance'
 import { Scene } from './components/Scene'
 import { SelectionControls } from './components/SelectionControls'
 import { isPlaceable } from './data/catalog'
@@ -16,7 +17,7 @@ import { copyText } from './lib/clipboard'
 import { buildShareUrl, readSharedConfig } from './lib/shareLink'
 import { useConfig } from './state/store'
 import { useDrag } from './state/drag'
-import { applyTheme } from './lib/theme'
+import { applyColors, applyTheme } from './lib/theme'
 import { dismissBoot } from './lib/boot'
 import { initAnalytics } from './lib/analytics'
 import { REPO_URL, supportUrl } from './data/support'
@@ -42,6 +43,7 @@ function App() {
   const boards = useConfig((s) => s.boards)
   const language = useConfig((s) => s.language)
   const theme = useConfig((s) => s.theme)
+  const colors = useConfig((s) => s.colors)
   const selectedId = useConfig((s) => s.selectedId)
   const remove = useConfig((s) => s.remove)
   const rotate = useConfig((s) => s.rotate)
@@ -69,6 +71,7 @@ function App() {
   // second click inherits the first click's already-expiring timer.
   const [shareNonce, setShareNonce] = useState(0)
   const [customOpen, setCustomOpen] = useState(false)
+  const [appearanceOpen, setAppearanceOpen] = useState(false)
   const [editingCustom, setEditingCustom] = useState<CustomPart | null>(null)
   // The 3D pane looks like a picture until you try it. Show a hint until the
   // camera actually moves, then take it away for the rest of the session. It is
@@ -121,6 +124,13 @@ function App() {
     media.addEventListener('change', sync)
     return () => media.removeEventListener('change', sync)
   }, [theme])
+
+  // The user's own colours go on as inline custom properties, above whatever
+  // the theme defined. Ordered after the theme effect on purpose: applyTheme
+  // swaps the whole palette, and these sit on top of the result.
+  useEffect(() => {
+    applyColors(colors)
+  }, [colors])
 
   // The Share button's label is a transient acknowledgement, not a mode. Left
   // alone it read "Link copied" for the rest of the session, so a second share
@@ -301,6 +311,7 @@ function App() {
       <Toolbar
         onResetView={() => setViewNonce((n) => n + 1)}
         onOpenHelp={() => setHelpOpen(true)}
+        onOpenAppearance={() => setAppearanceOpen(true)}
         onShare={() => void share()}
         shareState={shareState}
         shareDropped={shareDropped}
@@ -373,6 +384,7 @@ function App() {
       {customOpen && (
         <CustomPartForm editing={editingCustom} onClose={() => setCustomOpen(false)} />
       )}
+      {appearanceOpen && <Appearance onClose={() => setAppearanceOpen(false)} />}
     </div>
   )
 }

@@ -197,6 +197,12 @@ export function buildCostLines(
 
 export interface CostTotal {
   total: number
+  /**
+   * Packs to carry out of the store, over the same lines the money covers plus
+   * the ones whose price we could not resolve. How many things you are buying
+   * is knowable even when what they cost is not.
+   */
+  packs: number
   currency: string
   /** Included lines whose price we could not resolve. Never counted as zero. */
   unknownKeys: string[]
@@ -207,12 +213,14 @@ export interface CostTotal {
 
 export function totalCost(lines: readonly CostLine[], currency: string): CostTotal {
   let total = 0
+  let packs = 0
   const unknownKeys: string[] = []
   let usesStalePrices = false
   let staleCapturedAt: string | undefined
 
   for (const line of lines) {
     if (!line.included || line.packs === 0) continue
+    packs += line.packs
 
     if (line.lineTotal === null) {
       unknownKeys.push(line.key)
@@ -226,7 +234,7 @@ export function totalCost(lines: readonly CostLine[], currency: string): CostTot
     }
   }
 
-  return { total: round(total), currency, unknownKeys, usesStalePrices, staleCapturedAt }
+  return { total: round(total), packs, currency, unknownKeys, usesStalePrices, staleCapturedAt }
 }
 
 /** Money maths on floats needs rounding or 5.1 + 2.2 shows up as 7.300000001. */

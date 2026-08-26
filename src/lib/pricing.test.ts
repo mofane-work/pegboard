@@ -166,6 +166,43 @@ describe('totals', () => {
     expect(total.staleCapturedAt).toBe(snapshot.capturedAt)
   })
 
+  it('counts the packs to carry out, over the same lines the money covers', () => {
+    const lines = buildCostLines(
+      [
+        { key: 'board-56x56-white', quantity: 1, included: true },
+        // 2-pack, so 6 hooks is 3 packs.
+        { key: 'hook-large', quantity: 6, included: true },
+        { key: 'shelf', quantity: 2, included: false },
+      ],
+      BY_KEY,
+      ctx,
+    )
+    expect(totalCost(lines, 'USD').packs).toBe(4)
+  })
+
+  it('counts a pack whose price we could not resolve — you still carry it', () => {
+    const lines = buildCostLines(
+      [
+        { key: 'hook-large', quantity: 2, included: true },
+        { key: 'accessory-set-7', quantity: 1, included: true },
+      ],
+      BY_KEY,
+      context({ market: 'jp', currency: 'JPY', live: {} }),
+    )
+    const total = totalCost(lines, 'JPY')
+    expect(total.unknownKeys).toEqual(['accessory-set-7'])
+    expect(total.packs).toBe(2)
+  })
+
+  it('counts nothing for a line the user zeroed out', () => {
+    const lines = buildCostLines(
+      [{ key: 'hook-large', quantity: 0, included: true }],
+      BY_KEY,
+      ctx,
+    )
+    expect(totalCost(lines, 'USD').packs).toBe(0)
+  })
+
   it('avoids floating point noise in the total', () => {
     const lines = buildCostLines(
       [

@@ -82,8 +82,10 @@ This project was built to solve a design problem for Pegboards and offered some 
   into the bundle and kept current by a weekly GitHub Action. Press **Refresh prices** if
   you want today's number instead — that is the only thing here that ever contacts IKEA.
 - **Per-line checkboxes** so you can price only the upgrade.
-- **Per-line price overrides**, persisted — covers second-hand parts, sale prices, and any market with no live source.
-- **Pack-quantity aware**: `ceil(qty / packQty) × packPrice`, and the table shows both numbers when they differ ("6 hooks → 3 × 2-pack").
+- **Per-line price overrides**, persisted — covers second-hand parts, sale prices, and any
+  market with no live source.
+- **Pack-quantity aware**: `ceil(qty / packQty) × packPrice`, and the table shows both
+  numbers when they differ ("6 hooks → 3 × 2-pack").
 - Graceful degradation: override → live → cache → bundled snapshot → "—". An unknown
   price is never counted as zero.
 ![Cost Calculation](./docs/assets/cost-calculation.gif)
@@ -220,7 +222,7 @@ This project was developed with the assistance of [Claude Code](https://claude.a
 
 ## Visit counting
 
-This is the **one** third-party request the app makes.
+This is the **only** third-party request the app makes.
 
 ### What runs, and when
 

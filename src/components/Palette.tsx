@@ -1,10 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ACCESSORIES, isPlaceable } from '../data/catalog'
+import { ACCESSORIES, BY_KEY, isPlaceable } from '../data/catalog'
+import { countBreakdown } from '../lib/counts'
 import { MAX_CUSTOM_PARTS, type CustomPart } from '../data/customParts'
 import { PITCH_MM } from '../lib/grid'
 import { useConfig } from '../state/store'
 import { useDrag } from '../state/drag'
+
+function itemClass(picked: boolean): string {
+  return picked ? 'palette__item palette__item--picked' : 'palette__item'
+}
 
 /** How long "no room" stays up. Long enough to read, short enough to retry. */
 const NO_ROOM_FEEDBACK_MS = 3500
@@ -34,8 +39,12 @@ export function Palette({
   const language = useConfig((s) => s.language)
   const extras = useConfig((s) => s.extras)
   const setExtra = useConfig((s) => s.setExtra)
+  const boards = useConfig((s) => s.boards)
   const customParts = useConfig((s) => s.customParts)
   const startFromPalette = useDrag((s) => s.startFromPalette)
+  const draggingKey = useDrag((s) => s.itemKey)
+  const selectedId = useConfig((s) => s.selectedId)
+  const placements = useConfig((s) => s.placements)
   const allowOverlap = useConfig((s) => s.allowOverlap)
   const setAllowOverlap = useConfig((s) => s.setAllowOverlap)
 
@@ -55,6 +64,24 @@ export function Palette({
     setNoRoom(true)
     if (noRoomTimer.current) clearTimeout(noRoomTimer.current)
     noRoomTimer.current = setTimeout(() => setNoRoom(false), NO_ROOM_FEEDBACK_MS)
+  }
+
+  // Which row the pane is talking about: whatever is in hand, or failing that
+  // whatever is selected on the board. Both are the same question — "which
+  // component am I working with" — so they share one highlight.
+  const pickedKey =
+    draggingKey ?? placements.find((p) => p.id === selectedId)?.itemKey ?? null
+
+  // The same numbers the cost table shows. `connector-board` is the reason this
+  // cannot just read `extras`: the wall already needs some, so a stepper over
+  // the raw adjustment would disagree with the line the user pays for.
+  const { base, final } = useMemo(
+    () => countBreakdown(boards, placements, extras, BY_KEY),
+    [boards, placements, extras],
+  )
+
+  function setCount(key: string, target: number) {
+    setExtra(key, Math.max(0, target) - (base.get(key) ?? 0))
   }
 
   const placeable = ACCESSORIES.filter(isPlaceable)
@@ -89,7 +116,8 @@ export function Palette({
           <li key={item.key} className="palette__row">
             <button
               type="button"
-              className="palette__item"
+              className={itemClass(item.key === pickedKey)}
+              aria-current={item.key === pickedKey ? true : undefined}
               onPointerDown={(event) => {
                 // Touch implicitly captures the pointer to this element; release
                 // it so pointermove retargets to the canvas as the finger moves.
@@ -135,15 +163,15 @@ export function Palette({
               <button
                 type="button"
                 aria-label={t('palette.remove')}
-                onClick={() => setExtra(item.key, (extras[item.key] ?? 0) - 1)}
+                onClick={() => setCount(item.key, (final.get(item.key) ?? 0) - 1)}
               >
                 −
               </button>
-              <output>{extras[item.key] ?? 0}</output>
+              <output>{final.get(item.key) ?? 0}</output>
               <button
                 type="button"
                 aria-label={t('palette.add')}
-                onClick={() => setExtra(item.key, (extras[item.key] ?? 0) + 1)}
+                onClick={() => setCount(item.key, (final.get(item.key) ?? 0) + 1)}
               >
                 +
               </button>
@@ -159,7 +187,8 @@ export function Palette({
           <li key={part.key} className="palette__custom-row">
             <button
               type="button"
-              className="palette__item"
+              className={itemClass(part.key === pickedKey)}
+              aria-current={part.key === pickedKey ? true : undefined}
               onPointerDown={(event) => {
                 event.currentTarget.releasePointerCapture?.(event.pointerId)
                 startFromPalette(part.key)

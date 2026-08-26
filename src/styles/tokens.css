@@ -5,6 +5,12 @@
  * on bare :root. The dark variants (system-preference and explicit toggle)
  * only ever *redefine* the tokens that actually change for dark mode —
  * never introduce a token that doesn't already exist above.
+ *
+ * The 3D scene colours are picked against each other, not in isolation, and
+ * the numbers are in findings F37g. The one that is easy to get wrong is
+ * --selected-color: it has to differ from --accessory-color in BRIGHTNESS,
+ * not only in hue, or a selected item reads as "same tone, different colour"
+ * and does not stand out from its neighbours.
  */
 
 :root {
@@ -26,6 +32,7 @@
   --accessory-color: #f5a623;
   --snap-ok: #16a34a;
   --snap-bad: #d92d20;
+  --selected-color: #1a6ea6;
 
   /* Spacing */
   --space-1: 0.25rem;
@@ -70,11 +77,12 @@
     --color-danger: #f97066;
     --color-success: #4ade80;
 
-    --scene-bg: #101114;
-    --board-color: #3a3d44;
+    --scene-bg: #0b0c0f;
+    --board-color: #50555f;
     --accessory-color: #f5a623;
     --snap-ok: #4ade80;
     --snap-bad: #f97066;
+    --selected-color: #c7f1ff;
   }
 }
 
@@ -91,9 +99,10 @@
   --color-danger: #f97066;
   --color-success: #4ade80;
 
-  --scene-bg: #101114;
-  --board-color: #3a3d44;
+  --scene-bg: #0b0c0f;
+  --board-color: #50555f;
   --accessory-color: #f5a623;
   --snap-ok: #4ade80;
   --snap-bad: #f97066;
+  --selected-color: #c7f1ff;
 }

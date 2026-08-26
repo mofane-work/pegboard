@@ -137,9 +137,12 @@ function buildText(rows: Row[], lines: readonly CostLine[], options: ShoppingLis
     .reduce((sum, l) => sum + (l.lineTotal ?? 0), 0)
 
   const totalText = formatPrice(Math.round(total * 100) / 100, options.currency, options.locale)
+  // How many packs walk out of the store. Counted over every listed row, so a
+  // line whose price we could not resolve still adds to what you are carrying.
+  const totalPacks = String(rows.reduce((sum, r) => sum + Number(r.packs), 0))
   const showArticles = rows.some((r) => r.article !== '')
 
-  const packW = Math.max(...rows.map((r) => displayWidth(r.packs)), 1)
+  const packW = Math.max(...rows.map((r) => displayWidth(r.packs)), displayWidth(totalPacks), 1)
   const nameW = Math.max(...rows.map((r) => displayWidth(r.name)), 4)
   const articleW = showArticles ? Math.max(...rows.map((r) => displayWidth(r.article))) : 0
   const priceW = Math.max(
@@ -160,8 +163,10 @@ function buildText(rows: Row[], lines: readonly CostLine[], options: ShoppingLis
   }
 
   const ruleWidth = packW + 2 + nameW + (showArticles ? articleW + 2 : 0) + priceW + 6
+  // The pack sum goes in the pack column, lined up under the per-row counts,
+  // rather than as a new labelled row: the column already means "how many".
   const totalLine = [
-    `  ${' '.repeat(packW + 2)}`,
+    `  ${padStartDisplay(totalPacks, packW)} ×`,
     padDisplay(labels.total, nameW + (showArticles ? articleW + 2 : 0)),
     padStartDisplay(totalText, priceW),
   ].join('  ')
