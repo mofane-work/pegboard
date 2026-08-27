@@ -2,7 +2,7 @@
 
 # Pegboard
 
-Plan an IKEA SKÅDIS pegboard wall in 3D, drop accessories onto the real peg holes, and price only the partss you still need to buy. Fully static — no backend, no API key, no build-time secrets.
+Plan an IKEA SKÅDIS pegboard wall in 3D, drop accessories onto the real peg holes, and price only the partss you still need to buy. Fully static. No backend, no API key, no build-time secrets.
 
 [![CI](https://github.com/mofane-work/pegboard/actions/workflows/ci.yml/badge.svg)](https://github.com/mofane-work/pegboard/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
@@ -12,11 +12,11 @@ Plan an IKEA SKÅDIS pegboard wall in 3D, drop accessories onto the real peg hol
 
 ### ▶ [Try it live](https://mofane-work.github.io/pegboard/)
 
-No install, no sign-up — it is a static page.
+No install, no sign-up, a static page.
 
 > **Unofficial.** Not affiliated with, endorsed by, or sponsored by Inter IKEA Systems B.V.
 > SKÅDIS and IKEA are trademarks of their respective owners. Prices are indicative, come
-> from a public IKEA endpoint, and may be stale or wrong — **always confirm price and
+> from a public IKEA endpoint, and may be stale or wrong. **Please always confirm price and
 > availability on ikea.com before buying.**
 
 ![App Demonstration](./docs/assets/main-features.gif)
@@ -26,14 +26,11 @@ No install, no sign-up — it is a static page.
 - [Why this exists](#why-this-exists)
 - [Project status](#project-status)
 - [Features](#features)
-- [Features](#features)
 - [Quick start](#quick-start)
 - [Commands](#commands)
 - [How it works](#how-it-works)
-- [The hard parts](#the-hard-parts)
 - [Limitations](#limitations)
 - [Project structure](#project-structure)
-- [Deployment](#deployment)
 - [Visit counting](#visit-counting)
 - [Contributing](#contributing)
 - [License](#license)
@@ -48,13 +45,15 @@ Planning a pegboard wall in the store, or in your head, goes badly in three spec
 
 1. **You can't see it.** SKÅDIS accessories only mount on a fixed 40 mm lattice of slots. Whether the shelf you want actually fits next to the hook you already have is a geometry question, and the answer is not obvious from a product photo.
 2. **You over-order.** Several SKUs are multipacks. Six hooks is not "six × the hook
-   price" — it's three 2-packs. Per-unit mental arithmetic silently under-orders, and you find out at the checkout.
+   price", it's three 2-packs. Per-unit mental arithmetic silently under-orders, and you find out at the checkout.
 3. **You price the wrong thing.** If you already own half the parts, the number you
    actually care about is the cost of the *upgrade*, not the cost of the wall. No store page will tell you that.
 
 So: a 3D view at true millimetre scale, snapping that respects the real hole pattern, and a cost table where **every line has a checkbox** so you can exclude what you already own.
 
-## Project Status: Feature Complete
+## Project Status
+
+Status: **Feature Complete**
 
 This project was built to solve a design problem for Pegboards and offered some additional features alongside the plan. I consider it feature-complete and open-sourced it so others can leverage the work without reinventing the wheel. 
 
@@ -65,14 +64,14 @@ This project was built to solve a design problem for Pegboards and offered some 
 ## Features
 
 **Modelling**
-- 3D board view at true scale, procedurally generated — no third-party meshes.
+- 3D board view at true scale, procedurally generated and no third-party meshes.
 - **Multi-board walls**: up to 3 boards side by side, dragged and priced as one wall.
 - 4 boards and 16 accessories from the official SKÅDIS range (11 of them placeable).
 ![Multi Boards](./docs/assets/add-board.gif)
-- **Parity-aware snapping.** SKÅDIS slots form two interleaved lattices; an accessory with pegs on 40 mm centres can only sit on one of them. The snapper filters by lattice and rejects overlaps instead of letting parts intersect.
-- **Board orientation** — hang any wall board the other way round with ⟳ in the top bar. A 36×56 board becomes 56×36, and the peg lattice turns with the panel rather than being regenerated for the new dimensions.
+- **Parity-aware snapping**: SKÅDIS slots form two interleaved lattices; an accessory with pegs on 40 mm centres can only sit on one of them. The snapper filters by lattice and rejects overlaps instead of letting parts intersect.
+- **Board orientation**: hang any wall board the other way round with ⟳ in the top bar. A 36×56 board becomes 56×36, and the peg lattice turns with the panel rather than being regenerated for the new dimensions.
 - Quarter-turn rotation, undo/redo (50 steps), keyboard shortcuts.
-- **User-defined custom parts** — placeholder blocks for the 3D-printed holder or the router that isn't an IKEA product. Sized in whole peg cells, purely a visualisation aid.
+- **User-defined custom parts**: placeholder blocks for the 3D-printed holder or the router that isn't an IKEA product. Sized in whole peg cells, purely a visualisation aid.
 ![User Defined Parts](./docs/assets/user-defined-parts.gif)
 
 **Pricing**
@@ -80,9 +79,9 @@ This project was built to solve a design problem for Pegboards and offered some 
   prices in your own currency.
 - **No third-party request when you open the page.** Prices are read from a snapshot built
   into the bundle and kept current by a weekly GitHub Action. Press **Refresh prices** if
-  you want today's number instead — that is the only thing here that ever contacts IKEA.
+  you want today's number instead, and that is the only thing here that ever contacts IKEA.
 - **Per-line checkboxes** so you can price only the upgrade.
-- **Per-line price overrides**, persisted — covers second-hand parts, sale prices, and any
+- **Per-line price overrides**, persisted that covers second-hand parts, sale prices, and any
   market with no live source.
 - **Pack-quantity aware**: `ceil(qty / packQty) × packPrice`, and the table shows both
   numbers when they differ ("6 hooks → 3 × 2-pack").
@@ -94,12 +93,14 @@ This project was built to solve a design problem for Pegboards and offered some 
 - **Shopping list** with IKEA article numbers in the dotted form store staff look up.
 - **Printable build sheet** with an orthographic or isometric diagram of the finished wall.
 ![Printing Sheet](./docs/assets/printing-feature.gif)
-- **Share links** — the whole configuration is encoded in the URL, no server involved.
+- **Share links** as the whole configuration is encoded in the URL, no server involved.
 
 **Interface**
 - **English, Japanese, Traditional Chinese** (en / ja / zh-Hant).
 - Light / dark / system theme, applied to the 3D scene as well as the page.
-- **Resizable board pane** — width and height, both from the top bar.
+- **Customizable colours** by configuring the colours to match the place you want to hang the pegboard
+![Modify Colour](./docs/assets/modify-colour.png)
+- **Resizable board pane** by adjusting width and height, both from the top bar.
 - Configuration autosaves to localStorage.
 - **No analytics, no cookies, no accounts.** There is no server; nothing you do here is
   sent anywhere. See the Privacy section in the app's Help panel.
