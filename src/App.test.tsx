@@ -2,8 +2,12 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { useConfig } from './state/store'
+import { resetPartDefaults } from './state/partDefaults'
 import { buildWall, layoutBoards } from './lib/wall'
 import { analyticsConfigured } from './lib/analytics'
+import { customWidthMm } from './data/customParts'
+import { SKADIS_GRID, SKADIS_PEGS } from './lib/grid'
+import { BOARDS } from './data/catalog'
 
 // jsdom has no WebGL, so the 3D canvas cannot mount. These tests cover the
 // surrounding UI; the geometry and placement logic are tested directly in
@@ -37,6 +41,9 @@ vi.mock('./components/Scene', () => ({
 // presses Refresh prices, and the chain falls back to the committed snapshot.
 
 function resetStore() {
+  // Session-only module state: it outlives a test case, so a part saved by one
+  // test would seed the dialog in the next one.
+  resetPartDefaults()
   window.localStorage.clear()
   window.location.hash = ''
   useConfig.setState({
@@ -44,6 +51,7 @@ function resetStore() {
     placements: [],
     selectedId: null,
     customParts: [],
+    customBoards: [],
     past: [],
     future: [],
     market: 'us',
@@ -1086,6 +1094,161 @@ describe('custom components', () => {
     expect(useConfig.getState().customParts).toEqual([])
   })
 
+  it('defaults a new part to SKÅDIS pegs, so the dialog changes nothing on its own', () => {
+    render(<App />)
+    createPart()
+
+    expect(useConfig.getState().customParts[0].pegs).toEqual(SKADIS_PEGS)
+  })
+
+  it('lets a part be given the peg spacing of another pegboard system', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: '+ New custom part' }))
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Bit holder' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Self-defined' }))
+    fireEvent.change(screen.getByLabelText('Peg spacing'), { target: { value: '25.4' } })
+    fireEvent.change(screen.getByLabelText('Peg layout'), { target: { value: 'every' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    const part = useConfig.getState().customParts.at(-1)!
+    expect(part.pegs.pitchMm).toBe(25.4)
+    expect(part.pegs.layout).toBe('every')
+    // The body is sized by the part's own pitch, not the SKÅDIS constant.
+    expect(customWidthMm(part)).toBeCloseTo(50.8, 5)
+  })
+
+  // Advice, never a veto: the part still saves. The wall is SKÅDIS by default,
+  // so a 25.4 mm part matches nothing on it.
+  it('warns when a part matches no board on the wall, and saves it anyway', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: '+ New custom part' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Self-defined' }))
+    fireEvent.change(screen.getByLabelText('Peg spacing'), { target: { value: '25.4' } })
+
+    expect(screen.getByText(/No board on your wall uses this peg spacing/)).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    expect(useConfig.getState().customParts).toHaveLength(1)
+  })
+
+  it('hides the peg height field for a shape that has only one size', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: '+ New custom part' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Self-defined' }))
+    expect(screen.getByLabelText('Peg height')).toBeTruthy()
+
+    fireEvent.change(screen.getByLabelText('Peg shape'), { target: { value: 'round' } })
+    expect(screen.queryByLabelText('Peg height')).toBeNull()
+    expect(screen.getByLabelText('Peg size')).toBeTruthy()
+  })
+
+  // Almost every part wants SKÅDIS pegs, so the six fields that describe another
+  // system start collapsed rather than occupying the dialog for everyone.
+  it('opens on SKÅDIS with the peg fields collapsed', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: '+ New custom part' }))
+
+    expect(screen.getByRole('button', { name: 'SKÅDIS' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.queryByLabelText('Peg spacing')).toBeNull()
+    expect(screen.queryByLabelText('Peg layout')).toBeNull()
+    expect(screen.getByText('5 × 15 mm slots on 40 mm centres.')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Self-defined' }))
+    expect(screen.getByLabelText('Peg spacing')).toBeTruthy()
+    expect(screen.getByLabelText('Peg layout')).toBeTruthy()
+  })
+
+  // Pressing SKÅDIS has to RESET the spec, not merely hide it: a collapsed
+  // section holding numbers the label denies is the trap findings F37b describes.
+  it('resets the pegs when the SKÅDIS side is chosen again', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: '+ New custom part' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Self-defined' }))
+    fireEvent.change(screen.getByLabelText('Peg spacing'), { target: { value: '25.4' } })
+    fireEvent.click(screen.getByRole('button', { name: 'SKÅDIS' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(useConfig.getState().customParts.at(-1)!.pegs).toEqual(SKADIS_PEGS)
+  })
+
+  // But a mis-click must not destroy the typing, so the abandoned spec comes
+  // back if self-defined is chosen again in the same dialog.
+  it('restores the abandoned spec when self-defined is chosen again', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: '+ New custom part' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Self-defined' }))
+    fireEvent.change(screen.getByLabelText('Peg spacing'), { target: { value: '25.4' } })
+    fireEvent.click(screen.getByRole('button', { name: 'SKÅDIS' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Self-defined' }))
+
+    expect((screen.getByLabelText('Peg spacing') as HTMLInputElement).value).toBe('25.4')
+  })
+
+  // The reason the memory exists: someone modelling several bays of the same
+  // rack should type the numbers once.
+  it('reopens a new part with the size and pegs last entered, but not the name', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: '+ New custom part' }))
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Bay one' } })
+    fireEvent.change(screen.getByLabelText('Width (pegs)'), { target: { value: '3' } })
+    fireEvent.change(screen.getByLabelText('Depth (mm)'), { target: { value: '80' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Self-defined' }))
+    fireEvent.change(screen.getByLabelText('Peg spacing'), { target: { value: '25.4' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    fireEvent.click(screen.getByRole('button', { name: '+ New custom part' }))
+    expect((screen.getByLabelText('Width (pegs)') as HTMLInputElement).value).toBe('3')
+    expect((screen.getByLabelText('Depth (mm)') as HTMLInputElement).value).toBe('80')
+    expect((screen.getByLabelText('Peg spacing') as HTMLInputElement).value).toBe('25.4')
+    // Two parts sharing a name is worse than an empty field, and the lattice is
+    // about where a part hangs rather than how big it is.
+    expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('')
+    expect((screen.getByLabelText('Peg lattice') as HTMLSelectElement).value).toBe('A')
+  })
+
+  // The mode is derived from the spec rather than stored on the part, so it has
+  // to survive a round trip through the store.
+  it('reopens an edited part on the side its pegs put it on', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: '+ New custom part' }))
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Plain' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit custom part: Plain' }))
+    expect(screen.getByRole('button', { name: 'SKÅDIS' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.queryByLabelText('Peg spacing')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    fireEvent.click(screen.getByRole('button', { name: '+ New custom part' }))
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Odd' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Self-defined' }))
+    fireEvent.change(screen.getByLabelText('Peg spacing'), { target: { value: '25.4' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit custom part: Odd' }))
+    expect(
+      screen.getByRole('button', { name: 'Self-defined' }).getAttribute('aria-pressed'),
+    ).toBe('true')
+    expect((screen.getByLabelText('Peg spacing') as HTMLInputElement).value).toBe('25.4')
+  })
+
+  // The warning is what tells a user to press Self-defined in the first place,
+  // so it must not be gated on already having done so.
+  it('still warns about a SKÅDIS part on a wall that has no SKÅDIS board', () => {
+    render(<App />)
+    // A 1-inch board, and nothing else on the wall.
+    fireEvent.click(screen.getByRole('button', { name: 'Define custom board' }))
+    fireEvent.change(screen.getByLabelText('Hole spacing'), { target: { value: '25.4' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.change(screen.getByLabelText('Board'), {
+      target: { value: useConfig.getState().customBoards[0].key },
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: '+ New custom part' }))
+    expect(screen.getByRole('button', { name: 'SKÅDIS' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByText(/No board on your wall uses this peg spacing/)).toBeTruthy()
+  })
+
   it('places a custom part on the board from the keyboard', () => {
     render(<App />)
     const key = createPart()
@@ -1193,8 +1356,38 @@ describe('board orientation', () => {
   beforeEach(resetStore)
 
   const rotateButton = () => screen.getByRole('button', { name: 'Rotate board' }) as HTMLButtonElement
+  const noRotateButton = () => screen.queryByRole('button', { name: /^Rotate board/ })
 
-  it('turns the board from the toolbar and says so', () => {
+  /**
+   * Turning is a user-defined board's privilege since F42 — SKÅDIS slots are
+   * upright, so a turned IKEA panel holds nothing. These cases therefore drive
+   * the orientation UI through a custom board. `square` is SKÅDIS geometry at
+   * 56×56 (the shape the toolbar readout used to be checked against) and
+   * `tall` is 36×56, so the readouts asserted below are unchanged.
+   */
+  const square = {
+    key: 'custom-board:sq',
+    name: 'Square panel',
+    cols: 14,
+    rows: 14,
+    grid: SKADIS_GRID,
+  }
+  const tall = { ...square, key: 'custom-board:tall', name: 'Tall panel', cols: 9, rows: 14 }
+
+  function wallOfCustom(board: typeof square, count = 1) {
+    useConfig.setState({
+      customBoards: [board],
+      boards: Array.from({ length: count }, () => ({
+        boardKey: board.key,
+        offsetX: 0,
+        offsetY: 0,
+        rotated: false,
+      })),
+    })
+  }
+
+  it('turns a custom board from the toolbar and says so', () => {
+    wallOfCustom(square)
     render(<App />)
     expect(rotateButton().getAttribute('aria-pressed')).toBe('false')
 
@@ -1209,21 +1402,14 @@ describe('board orientation', () => {
   })
 
   it('shows the turned dimensions for a board that is not square', () => {
-    useConfig.setState({
-      boards: [{ boardKey: 'board-36x56-white', offsetX: 0, offsetY: 0, rotated: false }],
-    })
+    wallOfCustom(tall)
     render(<App />)
     fireEvent.click(rotateButton())
     expect(screen.getByText('turned — 56×36')).toBeTruthy()
   })
 
   it('clears that board only, and the clear is undoable', () => {
-    useConfig.setState({
-      boards: [
-        { boardKey: 'board-56x56-white', offsetX: 0, offsetY: 0, rotated: false },
-        { boardKey: 'board-56x56-white', offsetX: 0, offsetY: 0, rotated: false },
-      ],
-    })
+    wallOfCustom(square, 2)
     render(<App />)
     act(() => {
       useConfig.getState().place('hook-large', 'A:5,5', 0, 0)
@@ -1240,29 +1426,154 @@ describe('board orientation', () => {
     expect(useConfig.getState().boards[0].rotated).toBe(false)
   })
 
-  it('offers no rotation for the free-standing board', () => {
-    useConfig.setState({
-      boards: [{ boardKey: 'board-56x37-freestanding', offsetX: 0, offsetY: 0, rotated: false }],
-    })
+  /**
+   * The button is hidden rather than disabled: no board IKEA sells turns, so a
+   * disabled control would sit dead on every default wall. Help carries the
+   * reason instead. Covers all four — the three wall boards because their
+   * slots are upright, the free-standing one because it stands on its edge.
+   */
+  it.each(BOARDS.map((b) => b.key))('offers no rotation for %s', (boardKey) => {
+    useConfig.setState({ boards: [{ boardKey, offsetX: 0, offsetY: 0, rotated: false }] })
     render(<App />)
-    expect(rotateButton().disabled).toBe(true)
+    expect(noRotateButton()).toBeNull()
+  })
+
+  it('shows the button again as soon as a custom board is on the wall', () => {
+    wallOfCustom(square)
+    render(<App />)
+    expect(noRotateButton()).not.toBeNull()
   })
 
   it('drops the orientation when switching to a board that cannot hold it', () => {
+    wallOfCustom(square)
     render(<App />)
     fireEvent.click(rotateButton())
     expect(useConfig.getState().boards[0].rotated).toBe(true)
 
-    fireEvent.change(screen.getByDisplayValue('Pegboard 56×56'), {
-      target: { value: 'board-56x37-freestanding' },
+    fireEvent.change(screen.getByDisplayValue('Square panel'), {
+      target: { value: 'board-56x56-white' },
     })
     expect(useConfig.getState().boards[0].rotated).toBe(false)
+    expect(noRotateButton()).toBeNull()
   })
 
-  it('carries the orientation through a share link', async () => {
+  it('straightens a shared SKÅDIS board that was turned by an older build', async () => {
+    // A v3 link written before F42. The panel still arrives; the orientation
+    // does not, because that wall cannot be built.
     window.location.hash = '#c=v3~board-36x56-white*r~us~USD~~~~'
     render(<App />)
-    await waitFor(() => expect(useConfig.getState().boards[0].rotated).toBe(true))
-    expect(useConfig.getState().boards[0].boardKey).toBe('board-36x56-white')
+    await waitFor(() => expect(useConfig.getState().boards[0].boardKey).toBe('board-36x56-white'))
+    expect(useConfig.getState().boards[0].rotated).toBe(false)
+  })
+})
+
+describe('user-defined pegboards', () => {
+  beforeEach(resetStore)
+
+  /** Define one board through the dialog and return its key. */
+  function createBoard(preset = 'Printed SKÅDIS', name = 'Workshop') {
+    fireEvent.click(screen.getByRole('button', { name: 'Define custom board' }))
+    fireEvent.click(screen.getByRole('button', { name: preset }))
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: name } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    return useConfig.getState().customBoards.at(-1)!.key
+  }
+
+  it('opens the editor from the toolbar and defines a board', () => {
+    render(<App />)
+    const key = createBoard()
+
+    const board = useConfig.getState().customBoards[0]
+    expect(board.name).toBe('Workshop')
+    expect(board.grid.pitchMm).toBe(40)
+    expect(key.startsWith('custom-board:')).toBe(true)
+  })
+
+  it('offers the new board in the picker alongside the IKEA ones', () => {
+    render(<App />)
+    createBoard()
+
+    const select = screen.getByLabelText('Board') as HTMLSelectElement
+    const labels = [...select.options].map((o) => o.textContent)
+    expect(labels).toContain('Workshop')
+    expect(labels).toContain('Pegboard 56×56')
+  })
+
+  it('gives an imperial preset a square grid of round holes', () => {
+    render(<App />)
+    createBoard('US 1″ hardboard', 'Garage')
+
+    const board = useConfig.getState().customBoards[0]
+    expect(board.grid.arrangement).toBe('aligned')
+    expect(board.grid.shape).toBe('round')
+    expect(board.grid.pitchMm).toBe(25.4)
+  })
+
+  it('warns that SKÅDIS accessories will not fit an off-pitch board', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Define custom board' }))
+    // Scoped to the dialog: Help carries the same sentence permanently, and an
+    // unscoped query would pass whether the warning appeared or not.
+    const dialog = within(screen.getByRole('dialog'))
+    expect(dialog.queryByText(/will not physically fit/)).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'US 1″ hardboard' }))
+    expect(dialog.getByText(/will not physically fit/)).toBeTruthy()
+  })
+
+  it('refuses to save a board with more holes than it can draw', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Define custom board' }))
+    fireEvent.change(screen.getByLabelText('Width (holes)'), { target: { value: '40' } })
+    fireEvent.change(screen.getByLabelText('Height (holes)'), { target: { value: '40' } })
+
+    expect(screen.getByText(/Too many holes/)).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Save' })).toHaveProperty('disabled', true)
+  })
+
+  it('never puts a custom board in the shopping list', () => {
+    render(<App />)
+    const key = createBoard()
+    act(() => {
+      useConfig.setState({ boards: [{ boardKey: key, offsetX: 0, offsetY: 0, rotated: false }] })
+    })
+
+    expect(screen.getByText(/custom board\(s\) on the wall/)).toBeTruthy()
+    // Scoped to the cost table: the board picker offers every catalog board
+    // permanently, so an unscoped query would find the option, not a line.
+    const cost = within(document.querySelector('.cost') as HTMLElement)
+    expect(cost.queryByText('Pegboard 56×56')).toBeNull()
+    expect(cost.queryByText('Workshop')).toBeNull()
+  })
+
+  it('edits a definition from the panel that uses it', () => {
+    render(<App />)
+    const key = createBoard()
+    act(() => {
+      useConfig.setState({ boards: [{ boardKey: key, offsetX: 0, offsetY: 0, rotated: false }] })
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit board' }))
+    fireEvent.change(screen.getByLabelText('Width (holes)'), { target: { value: '6' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(useConfig.getState().customBoards[0].cols).toBe(6)
+  })
+
+  it('rebuilds a shared board for someone who has never seen it', async () => {
+    // The receiving half of the round trip, which is the half that matters: a
+    // recipient with no definition of their own still gets the right panel.
+    window.location.hash = '#c=v4~c*12*9*25.4*o*6.35*6.35*6.35*a~us~USD~~~~'
+    render(<App />)
+
+    await waitFor(() => expect(useConfig.getState().customBoards).toHaveLength(1))
+    const board = useConfig.getState().customBoards[0]
+
+    expect(board.grid.pitchMm).toBe(25.4)
+    expect(board.grid.shape).toBe('round')
+    expect(board.grid.arrangement).toBe('aligned')
+    expect(useConfig.getState().boards[0].boardKey).toBe(board.key)
+    // Named by its size — the sender's own name for it never travels.
+    expect(board.name).toBe('305×229')
   })
 })

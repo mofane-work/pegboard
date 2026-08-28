@@ -4,10 +4,10 @@ import { analyticsConfigured, isOptedOut, setOptedOut } from '../lib/analytics'
 import { REPO_URL } from '../data/support'
 
 const SECTIONS = [
-  { title: 'help.basicsTitle', keys: ['help.b1', 'help.b2', 'help.b3', 'help.b4', 'help.b8', 'help.b9', 'help.b10', 'help.b5', 'help.b6', 'help.b7', 'help.b11', 'help.b12'] },
+  { title: 'help.basicsTitle', keys: ['help.b1', 'help.b2', 'help.b3', 'help.b4', 'help.b8', 'help.b9', 'help.b10', 'help.b5', 'help.b6', 'help.b14', 'help.b7', 'help.b13', 'help.b11', 'help.b12'] },
   { title: 'help.shortcutsTitle', keys: ['help.s1', 'help.s2', 'help.s8', 'help.s6', 'help.s3', 'help.s4', 'help.s5', 'help.s7'] },
   { title: 'help.pricingTitle', keys: ['help.p1', 'help.p2', 'help.p6', 'help.p3', 'help.p4', 'help.p5'] },
-  { title: 'help.notesTitle', keys: ['help.n1', 'help.n2', 'help.n3', 'help.n4'] },
+  { title: 'help.notesTitle', keys: ['help.n1', 'help.n2', 'help.n3', 'help.n4', 'help.n5', 'help.n6', 'help.n7'] },
 ] as const
 
 /**

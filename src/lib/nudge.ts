@@ -24,9 +24,9 @@
 
 import { BY_KEY, type CatalogItem } from '../data/catalog'
 import {
-  PITCH_MM,
   bodyCentreOffset,
   evaluatePlacement,
+  gridOf,
   holeId,
   type HoleId,
   type Rect,
@@ -144,8 +144,12 @@ function crossSeam(
   const { board, hole, pattern } = resolved
   const [dCol, dRow] = STEPS[direction]
 
-  const aimX = hole.x + dCol * PITCH_MM + board.offsetX
-  const aimY = hole.y + dRow * PITCH_MM + board.offsetY
+  // The step is one of THIS board's pitches, not a hardcoded 40 mm. A custom
+  // board may be on any pitch, and aiming 40 mm across a 25.4 mm panel lands
+  // between holes and fails the distance test below for no good reason.
+  const pitchMm = gridOf(board.spec).pitchMm
+  const aimX = hole.x + dCol * pitchMm + board.offsetX
+  const aimY = hole.y + dRow * pitchMm + board.offsetY
 
   // snapOnWall is given a body centre, not an anchor — the same convention the
   // drag path uses, and the reason wide items are placeable at all (F9).
@@ -157,7 +161,10 @@ function crossSeam(
   const landedX = snap.result.anchor.x + landed.offsetX
   const landedY = snap.result.anchor.y + landed.offsetY
 
-  if (Math.hypot(landedX - aimX, landedY - aimY) > PITCH_MM * 1.5) return null
+  // Tolerance scales with the coarser of the two pitches, or a seam between
+  // boards of different spacing rejects every legal crossing.
+  const tolerance = Math.max(pitchMm, gridOf(landed.spec).pitchMm) * 1.5
+  if (Math.hypot(landedX - aimX, landedY - aimY) > tolerance) return null
 
   const movedX = landedX - (hole.x + board.offsetX)
   const movedY = landedY - (hole.y + board.offsetY)

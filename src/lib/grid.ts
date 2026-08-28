@@ -27,6 +27,116 @@ export const SLOT_HEIGHT_MM = 15
 export const BOARD_THICKNESS_MM = 4.6
 
 /**
+ * Bounds on a user-chosen pitch, shared by boards and parts so the two cannot
+ * drift apart — a part must be able to express every spacing a board can have.
+ */
+export const MIN_PITCH_MM = 10
+export const MAX_PITCH_MM = 100
+
+/**
+ * What a hole looks like. SKÅDIS is `slot-v`; classic imperial hardboard is
+ * `round`; a panel hung sideways presents its slots the other way up, which is
+ * handled at draw time rather than by storing `slot-h`.
+ */
+export type HoleShape = 'slot-v' | 'slot-h' | 'round' | 'square'
+
+/**
+ * How the holes are laid out. `staggered` is SKÅDIS's two interleaved
+ * lattices; `aligned` is a plain square grid, which is what every imperial
+ * pegboard and every 25 mm metric system surveyed actually uses (findings F39).
+ */
+export type Arrangement = 'staggered' | 'aligned'
+
+/**
+ * Everything about a board's hole field that is not its outline.
+ *
+ * One pitch, used on both axes, and the edge margin is always half of it.
+ * That is not a simplification of SKÅDIS — it is exactly what SKÅDIS does, and
+ * it is what makes the lattice land symmetrically on both edges without any
+ * centring arithmetic. It does mean a board's dimensions want to be whole
+ * multiples of the pitch, which is why `CustomBoard` is sized in cells.
+ */
+export interface HoleGrid {
+  /** Centre-to-centre spacing, both axes. */
+  pitchMm: number
+  arrangement: Arrangement
+  shape: HoleShape
+  holeWidthMm: number
+  /** Ignored for `round` and `square`, which are sized by `holeWidthMm`. */
+  holeHeightMm: number
+  thicknessMm: number
+}
+
+/** The measured SKÅDIS geometry, and the default for any board without a grid. */
+export const SKADIS_GRID: HoleGrid = {
+  pitchMm: PITCH_MM,
+  arrangement: 'staggered',
+  shape: 'slot-v',
+  holeWidthMm: SLOT_WIDTH_MM,
+  holeHeightMm: SLOT_HEIGHT_MM,
+  thicknessMm: BOARD_THICKNESS_MM,
+}
+
+/**
+ * Where an accessory's pegs sit along its body. The body is always `cols` cells
+ * wide, so the span is fixed at `cols - 1` pitches; this picks which of those
+ * positions actually carry a peg.
+ *
+ * `ends` is the two-peg convention every real SKÅDIS accessory uses and the
+ * only behaviour that existed before peg specs. `every` is the OpenSCAD
+ * library's `all_pegs` — more holes engaged, more load carried. `single` hangs
+ * the body from one peg at its centre. `corners` adds a second peg row at the
+ * body's bottom edge, which is how a rigid box is pinned rather than hung.
+ */
+export type PegLayout = 'ends' | 'every' | 'single' | 'corners'
+
+/**
+ * An accessory's pegs — the mirror image of `HoleGrid`, and deliberately shaped
+ * like it. A board says what its holes are; a part says what its pegs are, and
+ * the two are comparable field by field:
+ *
+ *     HoleGrid.pitchMm      <->  PegSpec.pitchMm
+ *     HoleGrid.shape        <->  PegSpec.shape
+ *     HoleGrid.holeWidthMm  <->  PegSpec.widthMm
+ *     HoleGrid.holeHeightMm <->  PegSpec.heightMm
+ *     HoleGrid.thicknessMm  <->  PegSpec.lengthMm
+ *
+ * That correspondence is what `pegFitWarnings` in data/customParts.ts checks,
+ * and it is why the two dialogs read as siblings.
+ *
+ * Peg OFFSETS remain lattice steps, so a part always lands on real holes
+ * whatever this pitch says. `pitchMm` sizes the BODY in millimetres — which is
+ * why a part whose pitch differs from its board's is drawn visibly wrong rather
+ * than silently rescaled (findings F40).
+ */
+export interface PegSpec {
+  /** Centre-to-centre peg spacing, and the millimetre size of one body cell. */
+  pitchMm: number
+  layout: PegLayout
+  shape: HoleShape
+  widthMm: number
+  /** Ignored for `round` and `square`, which are sized by `widthMm`. */
+  heightMm: number
+  /** How far the peg reaches back from the board face, millimetres. */
+  lengthMm: number
+}
+
+/**
+ * SKÅDIS pegs: a 5 x 15 mm tab on 40 mm centres, reaching far enough back to
+ * clear the 4.6 mm panel and retain behind it. The cross-section is the SLOT's
+ * own size — a peg is shaped by the hole it enters, which is why these read
+ * from the same constants `SKADIS_GRID` does.
+ */
+export const SKADIS_PEGS: PegSpec = {
+  pitchMm: PITCH_MM,
+  layout: 'ends',
+  shape: 'slot-v',
+  widthMm: SLOT_WIDTH_MM,
+  heightMm: SLOT_HEIGHT_MM,
+  lengthMm: 10,
+}
+
+/**
  * Which interleaved lattice a hole belongs to. Pegs sit on 40 mm centres, so a
  * multi-peg accessory can only ever engage holes of a SINGLE lattice — mixing A
  * and B is physically impossible. Snapping must respect this.
@@ -64,6 +174,12 @@ export interface BoardSpec {
    * and anticlockwise produce the same hole field (findings.md F24).
    */
   rotated?: boolean
+  /**
+   * Absent means SKÅDIS. Carrying the grid on the spec rather than looking it
+   * up by key is what lets a user-defined board flow through `buildWall`,
+   * snapping, the mesh builder and the print sheet with no special case.
+   */
+  grid?: HoleGrid
 }
 
 /** Axis-aligned rectangle in board space, anchored at its bottom-left corner. */
@@ -97,54 +213,104 @@ export function holeId(lattice: Lattice, col: number, row: number): HoleId {
   return `${lattice}:${col},${row}`
 }
 
-/** Per-axis origin of each lattice, in mm from the board's bottom-left corner. */
-const LATTICE_ORIGINS: Record<Lattice, { x: number; y: number }> = {
-  A: { x: MARGIN_MM, y: MARGIN_MM + PITCH_MM / 2 },
-  B: { x: MARGIN_MM + PITCH_MM / 2, y: MARGIN_MM },
+/** The grid a board is drawn on. Absent means SKÅDIS. */
+export function gridOf(board: BoardSpec): HoleGrid {
+  return board.grid ?? SKADIS_GRID
+}
+
+/** Which lattices a grid actually carries. An aligned grid has only one. */
+function latticesOf(grid: HoleGrid): Lattice[] {
+  return grid.arrangement === 'aligned' ? ['A'] : ['A', 'B']
 }
 
 /**
  * Origin of a lattice on a board that may be hung sideways.
  *
+ * Both lattices are generated from one base origin at half a pitch in from the
+ * bottom-left corner. A is that origin lifted half a pitch in y, B is it pushed
+ * half a pitch in x — so B = A + (p/2, −p/2), the diagonal-in-opposite-senses
+ * offset findings.md F8 measured off the photograph. At p = 40 this is A on
+ * (20, 40) and B on (40, 20), which is the table this replaced.
+ *
  * Turning the panel a quarter turn does NOT give you the lattice of a board
  * whose dimensions happen to be swapped — the pattern is not 90°-symmetric.
  * Mapping each lattice through `(x, y) → (H − y, x)` shows the rotated field is
- * exactly the upright generator with the two origins exchanged: A lands on
- * (40, 20) and B on (20, 40). Worked through in findings.md F24, and pinned by
- * a test that rotates every hole of every board and compares the sets.
+ * exactly the upright generator with the two origins exchanged. Worked through
+ * in findings.md F24, and pinned by a test that rotates every hole of every
+ * board and compares the sets. An aligned grid is symmetric under that
+ * exchange, so rotation leaves its single origin alone.
  *
  * The tags stay A and B because rotation maps each lattice onto itself as a
  * set, which is all peg parity cares about.
  */
-function latticeOrigin(lattice: Lattice, rotated = false): { x: number; y: number } {
-  if (!rotated) return LATTICE_ORIGINS[lattice]
-  return LATTICE_ORIGINS[lattice === 'A' ? 'B' : 'A']
+function latticeOrigin(lattice: Lattice, grid: HoleGrid, rotated = false): { x: number; y: number } {
+  const half = grid.pitchMm / 2
+  if (grid.arrangement === 'aligned') return { x: half, y: half }
+
+  const effective = rotated ? (lattice === 'A' ? 'B' : 'A') : lattice
+  return effective === 'A' ? { x: half, y: half * 2 } : { x: half * 2, y: half }
 }
 
-/** Every slot on the board, both lattices, ordered A then B. */
+/**
+ * How many holes one lattice fits along an axis.
+ *
+ * The limit mirrors the origin — a slot must clear its own margin on the far
+ * side too — so the span available is `extent − 2 × origin`. Shared with
+ * `generateHoles` rather than derived independently, because a closed form that
+ * drifts from the generator is exactly the class of bug findings.md F7 was.
+ */
+function axisCount(origin: number, extent: number, pitchMm: number): number {
+  const span = extent - origin * 2
+  if (span < -1e-9) return 0
+  return Math.floor(span / pitchMm + 1e-9) + 1
+}
+
+/** Every slot on the board, ordered A then B. An aligned board has only A. */
 export function generateHoles(board: BoardSpec): Hole[] {
+  const grid = gridOf(board)
   const holes: Hole[] = []
-  const lattices: Lattice[] = ['A', 'B']
 
-  for (const lattice of lattices) {
-    const origin = latticeOrigin(lattice, board.rotated)
-    // A slot must clear its own margin on the far side too, which is why the
-    // limit mirrors the origin rather than always being MARGIN_MM.
-    const maxX = board.widthMm - origin.x
-    const maxY = board.heightMm - origin.y
+  for (const lattice of latticesOf(grid)) {
+    const origin = latticeOrigin(lattice, grid, board.rotated)
+    const cols = axisCount(origin.x, board.widthMm, grid.pitchMm)
+    const rows = axisCount(origin.y, board.heightMm, grid.pitchMm)
 
-    let row = 0
-    for (let y = origin.y; y <= maxY + 1e-9; y += PITCH_MM) {
-      let col = 0
-      for (let x = origin.x; x <= maxX + 1e-9; x += PITCH_MM) {
-        holes.push({ id: holeId(lattice, col, row), lattice, col, row, x, y })
-        col += 1
+    for (let row = 0; row < rows; row += 1) {
+      for (let col = 0; col < cols; col += 1) {
+        holes.push({
+          id: holeId(lattice, col, row),
+          lattice,
+          col,
+          row,
+          x: origin.x + col * grid.pitchMm,
+          y: origin.y + row * grid.pitchMm,
+        })
       }
-      row += 1
     }
   }
 
   return holes
+}
+
+/**
+ * How many holes `generateHoles` would return, without building them.
+ *
+ * The editor needs this on every keystroke to show the count and to refuse a
+ * board past the budget, and punching a few thousand obrounds to find out how
+ * many there are is not a thing to do while someone is typing.
+ */
+export function holeCount(board: BoardSpec): number {
+  const grid = gridOf(board)
+  let total = 0
+
+  for (const lattice of latticesOf(grid)) {
+    const origin = latticeOrigin(lattice, grid, board.rotated)
+    total +=
+      axisCount(origin.x, board.widthMm, grid.pitchMm) *
+      axisCount(origin.y, board.heightMm, grid.pitchMm)
+  }
+
+  return total
 }
 
 export function indexHoles(holes: readonly Hole[]): Map<HoleId, Hole> {
@@ -368,13 +534,19 @@ export function snapPlacement(
 ): PlacementResult | null {
   const [targetX, targetY] = anchorPointForCentre(pattern, centreX, centreY)
 
+  // Peg parity is what stops an accessory bridging the two SKÅDIS lattices. An
+  // aligned board has only one lattice, so there is nothing to bridge and the
+  // filter is vacuous — enforcing it anyway would make a custom part locked to
+  // lattice B unplaceable on every square-grid board.
+  const parity = gridOf(board).arrangement === 'aligned' ? 'either' : pattern.lattice
+
   let best: PlacementResult | null = null
   let bestDist = Infinity
   let fallback: PlacementResult | null = null
   let fallbackDist = Infinity
 
   for (const hole of holes) {
-    if (pattern.lattice !== 'either' && hole.lattice !== pattern.lattice) continue
+    if (parity !== 'either' && hole.lattice !== parity) continue
 
     const dist = (hole.x - targetX) ** 2 + (hole.y - targetY) ** 2
     if (dist >= bestDist && dist >= fallbackDist) continue

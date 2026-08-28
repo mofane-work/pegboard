@@ -15,13 +15,43 @@
  *
  * A board hung sideways carries a `*r` suffix — `board-36x56-white*r`. v2 links
  * predate orientation and decode as upright, so old links keep working.
+ *
+ * A user-defined board has no key the recipient could resolve, so v4 carries
+ * its GEOMETRY inline instead, as a fixed-arity entry led by a `c` sentinel:
+ *
+ *   c*<cols>*<rows>*<pitch>*<shape>*<holeW>*<holeH>*<thick>[*r]
+ *
+ * Dropping it instead would take a whole panel and everything hanging on it,
+ * which is a much worse failure than the one custom PARTS accept. The board's
+ * NAME does not travel — free text the user typed stays local, as it does for
+ * `PlacedBoard.name` and for custom parts.
  */
 
 import type { Rotation } from './grid'
+import type { BoardGeometry } from '../data/customBoards'
+import type { HoleShape } from './grid'
 
-const VERSION = 'v3'
-/** v2 is still readable: it simply has no board carrying the `*r` suffix. */
-const ACCEPTED_VERSIONS = new Set(['v2', VERSION])
+const VERSION = 'v4'
+/**
+ * v2 has no board carrying the `*r` suffix; v3 has no board carrying inline
+ * geometry. Both remain readable, and a link already in someone's notes keeps
+ * opening the wall it was made from.
+ */
+const ACCEPTED_VERSIONS = new Set(['v2', 'v3', VERSION])
+/** Marks a board entry that carries its own geometry rather than a key. */
+const CUSTOM = 'c'
+/** Hole shapes, abbreviated. The link is read by people when it goes wrong. */
+const SHAPE_CODES: Record<HoleShape, string> = {
+  'slot-v': 'v',
+  'slot-h': 'h',
+  round: 'o',
+  square: 'q',
+}
+const SHAPE_BY_CODE: Record<string, HoleShape> = Object.fromEntries(
+  Object.entries(SHAPE_CODES).map(([shape, code]) => [code, shape as HoleShape]),
+) as Record<string, HoleShape>
+/** Millimetres, up to two decimals — a quarter inch is 6.35. */
+const NUMBER = /^\d{1,4}(\.\d{1,2})?$/
 /** Marks a board hung a quarter turn round. */
 const ROTATED = 'r'
 const SECTION = '~'
@@ -40,6 +70,11 @@ export interface SharedBoard {
   offsetX: number
   offsetY: number
   rotated: boolean
+  /**
+   * Present for a user-defined board: everything needed to rebuild it, with no
+   * name and no key. The recipient's store materialises a definition from it.
+   */
+  custom?: BoardGeometry
 }
 
 export interface SharedConfig {
@@ -75,9 +110,26 @@ export function encodeConfig(config: SharedConfig): string {
     .join(ENTRY)
 
   // Offsets are derived from the layout, so only the board keys travel — plus
-  // an orientation flag, which is not derivable from anything else.
+  // an orientation flag, which is not derivable from anything else, and the
+  // whole geometry for a board the recipient has no way to look up.
   const boards = config.boards
-    .map((b) => (b.rotated ? `${b.boardKey}${FIELD}${ROTATED}` : b.boardKey))
+    .map((b) => {
+      const fields = b.custom
+        ? [
+            CUSTOM,
+            String(b.custom.cols),
+            String(b.custom.rows),
+            String(b.custom.grid.pitchMm),
+            SHAPE_CODES[b.custom.grid.shape],
+            String(b.custom.grid.holeWidthMm),
+            String(b.custom.grid.holeHeightMm),
+            String(b.custom.grid.thicknessMm),
+            b.custom.grid.arrangement === 'aligned' ? 'a' : 's',
+          ]
+        : [b.boardKey]
+      if (b.rotated) fields.push(ROTATED)
+      return fields.join(FIELD)
+    })
     .join(ENTRY)
 
   const pairs = (record: Record<string, number>) =>
@@ -119,6 +171,14 @@ export function decodeConfig(encoded: string): SharedConfig | null {
   const boards: SharedBoard[] = []
   for (const entry of boardEntries) {
     const fields = entry.split(FIELD)
+
+    if (fields[0] === CUSTOM) {
+      const board = decodeCustomBoard(fields)
+      if (board === null) return null
+      boards.push(board)
+      continue
+    }
+
     if (fields.length > 2) return null
     const [boardKey, flag] = fields
     if (!KEY.test(boardKey)) return null
@@ -159,6 +219,46 @@ export function decodeConfig(encoded: string): SharedConfig | null {
   if (overrides === null || extras === null) return null
 
   return { boards, market, currency, placements, excluded, overrides, extras }
+}
+
+/**
+ * A board entry carrying its own geometry. Every field is checked rather than
+ * cast: this arrives from outside the app, and what it feeds is a triangulator.
+ * The store clamps the result again on the way in.
+ */
+function decodeCustomBoard(fields: string[]): SharedBoard | null {
+  if (fields.length !== 9 && fields.length !== 10) return null
+
+  const [, cols, rows, pitch, shape, holeW, holeH, thick, arrangement, flag] = fields
+  if (!/^\d{1,3}$/.test(cols) || !/^\d{1,3}$/.test(rows)) return null
+  for (const value of [pitch, holeW, holeH, thick]) {
+    if (!NUMBER.test(value)) return null
+  }
+  if (!(shape in SHAPE_BY_CODE)) return null
+  if (arrangement !== 'a' && arrangement !== 's') return null
+  if (flag !== undefined && flag !== ROTATED) return null
+
+  return {
+    // A key nothing can resolve, deliberately: the store replaces it with the
+    // key of the definition it materialises, and `boardSpec` falls back rather
+    // than throwing if that somehow does not happen.
+    boardKey: '',
+    offsetX: 0,
+    offsetY: 0,
+    rotated: flag === ROTATED,
+    custom: {
+      cols: Number(cols),
+      rows: Number(rows),
+      grid: {
+        pitchMm: Number(pitch),
+        arrangement: arrangement === 'a' ? 'aligned' : 'staggered',
+        shape: SHAPE_BY_CODE[shape],
+        holeWidthMm: Number(holeW),
+        holeHeightMm: Number(holeH),
+        thicknessMm: Number(thick),
+      },
+    },
+  }
 }
 
 function splitEntries(raw: string): string[] {

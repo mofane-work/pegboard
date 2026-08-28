@@ -9,10 +9,23 @@ import type { HoleId, Rotation } from '../lib/grid'
 import type { LanguageId } from '../data/catalog'
 import {
   clampCustomPart,
+  clampPegSpec,
   MAX_CUSTOM_PARTS,
   newCustomKey,
   type CustomPart,
 } from '../data/customParts'
+import {
+  FALLBACK_BOARD_KEY,
+  MAX_CUSTOM_BOARDS,
+  catalogWith,
+  clampCustomBoard,
+  customBoardHeightMm,
+  customBoardWidthMm,
+  newCustomBoardKey,
+  sameGeometry,
+  type BoardGeometry,
+  type CustomBoard,
+} from '../data/customBoards'
 import { detectLanguage } from '../i18n/detect'
 import { canRotateBoard, MAX_BOARDS } from '../lib/wall'
 import type { PriceMarketId } from '../lib/pricing'
@@ -65,11 +78,15 @@ export type ThemePreference = 'light' | 'dark' | 'system'
  * Without it, undoing a delete would restore placements pointing at a part that
  * no longer exists, and the `pruneUnresolvable` pass would silently eat them
  * again — an undo that visibly does nothing.
+ *
+ * `customBoards` is here for the same reason, one step further out: deleting a
+ * board definition re-points the panels using it and clears what hung on them.
  */
 interface EditSnapshot {
   boards: PlacedBoard[]
   placements: Placement[]
   customParts: CustomPart[]
+  customBoards: CustomBoard[]
 }
 
 /** Deep enough history to be useful, bounded so it cannot grow without limit. */
@@ -99,6 +116,27 @@ export function clampBoardName(name: string | undefined): string | undefined {
   return clean === '' ? undefined : clean
 }
 
+/**
+ * The item map for THIS user, boards included.
+ *
+ * `canRotateBoard` reads the catalog, and a user-defined board is not in it —
+ * without this a custom panel would silently refuse to turn.
+ */
+function itemsOf(state: ConfigState) {
+  return catalogWith([], state.customBoards)
+}
+
+/**
+ * What to call a board that arrived in a link. The sender's own name for it
+ * does not travel — free text stays local — so the recipient gets its size,
+ * which is at least true and tells them which panel it is.
+ */
+function sharedBoardName(board: CustomBoard): string {
+  const width = Math.round(customBoardWidthMm(board))
+  const height = Math.round(customBoardHeightMm(board))
+  return `${width}×${height}`
+}
+
 function clampExtra(quantity: number): number {
   if (!Number.isFinite(quantity)) return 0
   return Math.max(-MAX_EXTRA, Math.min(MAX_EXTRA, Math.trunc(quantity)))
@@ -114,6 +152,13 @@ interface ConfigState {
    * they are one person's view of their own wall, not a shopping list.
    */
   customParts: CustomPart[]
+  /**
+   * User-defined pegboards — a self-printed clone, a sheet of imperial
+   * hardboard, a metal panel. Persisted, and unlike custom parts these DO
+   * travel in a share link: dropping one would take a whole panel and
+   * everything on it with it, which is not a graceful degradation.
+   */
+  customBoards: CustomBoard[]
 
   market: PriceMarketId
   customCurrency: string
@@ -193,6 +238,16 @@ interface ConfigState {
   /** Removes the part and every placement of it. */
   removeCustomPart: (key: string) => void
 
+  /** Returns the new board's key, or null when the cap is already reached. */
+  addCustomBoard: (board: Omit<CustomBoard, 'key'>) => string | null
+  updateCustomBoard: (key: string, board: Omit<CustomBoard, 'key'>) => void
+  /**
+   * Removes the definition, re-points any panel hung on it to a stock board and
+   * clears that panel's placements — the same thing changing a board's size
+   * already does, because the holes underneath have moved either way.
+   */
+  removeCustomBoard: (key: string) => void
+
   setMarket: (market: PriceMarketId) => void
   setCustomCurrency: (currency: string) => void
   setLanguage: (language: LanguageId) => void
@@ -224,7 +279,7 @@ interface ConfigState {
 
 /** Shape accepted from a decoded share link. */
 export interface SharedConfigInput {
-  boards: PlacedBoard[]
+  boards: Array<PlacedBoard & { custom?: BoardGeometry }>
   market: string
   currency: string
   placements: Array<{
@@ -243,6 +298,7 @@ function snapshot(state: ConfigState): EditSnapshot {
     boards: state.boards,
     placements: state.placements,
     customParts: state.customParts,
+    customBoards: state.customBoards,
   }
 }
 
@@ -320,6 +376,34 @@ export function migrateConfig(persisted: unknown, version: number): ConfigState 
   if (version < 11) {
     state.boards = (state.boards ?? []).map((b) => ({ ...b, name: clampBoardName(b.name) }))
   }
+  // v12 introduced user-defined pegboards.
+  if (version < 12) state.customBoards ??= []
+  // v13 gave a custom part its own pegs. Everything saved before it was drawn
+  // on SKADIS assumptions, so that is exactly what it gets — an existing part
+  // reopens identical, and `clampPegSpec` fills in anything malformed.
+  if (version < 13) {
+    state.customParts = (state.customParts ?? []).map((p) => ({
+      ...p,
+      pegs: clampPegSpec(p.pegs),
+    }))
+  }
+  // v14 took the quarter turn away from every SKÅDIS board: the slots are
+  // upright, so a turned panel holds nothing (findings F42). A wall saved
+  // before this still carries `rotated: true`, and while `boardSpec` refuses to
+  // honour it anyway, leaving a stale flag in the store means the share-link
+  // encoder writes an orientation that nothing will ever apply.
+  //
+  // Read against THIS user's boards, not the bare catalog: a user-defined panel
+  // is still rotatable and must keep its turn. Placements are deliberately left
+  // alone — the panel reverts to its upright dimensions, so whatever hung on it
+  // no longer lands on a real hole and the existing prune drops it. That loss
+  // is the point: those placements described a wall that cannot be built.
+  if (version < 14) {
+    const items = catalogWith([], state.customBoards ?? [])
+    state.boards = (state.boards ?? []).map((b) =>
+      b.rotated && !canRotateBoard(b.boardKey, items) ? { ...b, rotated: false } : b,
+    )
+  }
   return state
 }
 
@@ -330,6 +414,7 @@ export const useConfig = create<ConfigState>()(
       placements: [],
       selectedId: null,
       customParts: [],
+      customBoards: [],
 
       market: 'us',
       customCurrency: 'TWD',
@@ -361,7 +446,11 @@ export const useConfig = create<ConfigState>()(
           ...remember(state),
           boards: state.boards.map((b, i) =>
             i === index
-              ? { ...b, boardKey, rotated: b.rotated && canRotateBoard(boardKey) }
+              ? {
+                  ...b,
+                  boardKey,
+                  rotated: b.rotated && canRotateBoard(boardKey, itemsOf(state)),
+                }
               : b,
           ),
           placements: state.placements.filter((p) => p.boardIndex !== index),
@@ -400,7 +489,7 @@ export const useConfig = create<ConfigState>()(
       rotateBoard: (index) =>
         set((state) => {
           const board = state.boards[index]
-          if (!board || !canRotateBoard(board.boardKey)) return state
+          if (!board || !canRotateBoard(board.boardKey, itemsOf(state))) return state
           return {
             ...remember(state),
             boards: state.boards.map((b, i) =>
@@ -469,6 +558,60 @@ export const useConfig = create<ConfigState>()(
             placements: state.placements.filter((p) => !drop.has(p.id)),
             selectedId:
               state.selectedId && drop.has(state.selectedId) ? null : state.selectedId,
+          }
+        }),
+
+      addCustomBoard: (board) => {
+        let created: string | null = null
+        set((state) => {
+          if (state.customBoards.length >= MAX_CUSTOM_BOARDS) return state
+          const next = clampCustomBoard({ ...board, key: newCustomBoardKey() })
+          created = next.key
+          return { ...remember(state), customBoards: [...state.customBoards, next] }
+        })
+        return created
+      },
+
+      // Clamped here rather than only in the dialog, for the same reason custom
+      // parts are — but with more at stake: these numbers reach a triangulator,
+      // and `migrate` is skipped when the stored version already matches.
+      updateCustomBoard: (key, board) =>
+        set((state) => {
+          const next = clampCustomBoard({ ...board, key })
+          const affected = new Set(
+            state.boards.flatMap((b, i) => (b.boardKey === key ? [i] : [])),
+          )
+          return {
+            ...remember(state),
+            customBoards: state.customBoards.map((b) => (b.key === key ? next : b)),
+            // Editing a definition moves the holes under whatever hangs on it,
+            // exactly as changing a panel's size does — so the same panels get
+            // cleared. The panels themselves are untouched: they still name
+            // this board, and a custom board is always rotatable.
+            placements: state.placements.filter((p) => !affected.has(p.boardIndex)),
+            selectedId: affected.size > 0 ? null : state.selectedId,
+          }
+        }),
+
+      removeCustomBoard: (key) =>
+        set((state) => {
+          const affected = new Set(
+            state.boards.flatMap((b, i) => (b.boardKey === key ? [i] : [])),
+          )
+          if (affected.size === 0) {
+            return {
+              ...remember(state),
+              customBoards: state.customBoards.filter((b) => b.key !== key),
+            }
+          }
+          return {
+            ...remember(state),
+            customBoards: state.customBoards.filter((b) => b.key !== key),
+            boards: state.boards.map((b, i) =>
+              affected.has(i) ? { ...b, boardKey: FALLBACK_BOARD_KEY, rotated: false } : b,
+            ),
+            placements: state.placements.filter((p) => !affected.has(p.boardIndex)),
+            selectedId: null,
           }
         }),
 
@@ -561,6 +704,7 @@ export const useConfig = create<ConfigState>()(
             boards: previous.boards,
             placements: previous.placements,
             customParts: previous.customParts,
+            customBoards: previous.customBoards,
             selectedId: null,
           }
         }),
@@ -575,29 +719,78 @@ export const useConfig = create<ConfigState>()(
             boards: next.boards,
             placements: next.placements,
             customParts: next.customParts,
+            customBoards: next.customBoards,
             selectedId: null,
           }
         }),
 
       applyShared: (config) =>
-        set({
-          boards: config.boards,
-          placements: config.placements.map((p) => ({ ...p, id: nextId() })),
-          market: config.market as PriceMarketId,
-          customCurrency: config.currency,
-          overrides: config.overrides,
-          // Clamped rather than trusted: the decoder checks the shape of a
-          // link, but the numbers in it are still a stranger's.
-          extras: Object.fromEntries(
-            Object.entries(config.extras)
-              .map(([key, quantity]) => [key, clampExtra(quantity)] as const)
-              .filter(([, quantity]) => quantity !== 0),
-          ),
-          excluded: Object.fromEntries(config.excluded.map((k) => [k, true as const])),
-          selectedId: null,
-          // A link is a starting point, not a step you can undo past.
-          past: [],
-          future: [],
+        set((state) => {
+          // A link carrying a user-defined board carries its geometry, not a
+          // key the recipient could resolve. Materialise a definition for each
+          // — reusing one that already describes the same board, so opening the
+          // same link twice does not pile up duplicates, and a wall using one
+          // board on two panels gets one definition.
+          const customBoards = [...state.customBoards]
+
+          /** The key a shared panel should end up naming. */
+          const resolveKey = (geometry: BoardGeometry): string => {
+            const clamped = clampCustomBoard({ key: '', name: '', ...geometry })
+            const existing = customBoards.find((b) => sameGeometry(b, clamped))
+            if (existing) return existing.key
+
+            // Out of room rather than silently over the cap: the panel falls
+            // back to a stock board, which is what a missing definition
+            // already resolves to anyway.
+            if (customBoards.length >= MAX_CUSTOM_BOARDS) return FALLBACK_BOARD_KEY
+
+            const created = {
+              ...clamped,
+              key: newCustomBoardKey(),
+              name: sharedBoardName(clamped),
+            }
+            customBoards.push(created)
+            return created.key
+          }
+
+          // The link's orientation is checked against the catalog, not taken
+          // on trust. A link written before F42 can name a turned SKÅDIS board,
+          // and `migrateConfig` never sees it — a link is not a saved blob. The
+          // custom boards this link brought are already in `customBoards`, so
+          // the map is built after `resolveKey` has run for all of them.
+          const raw = config.boards.map((board) => ({
+            boardKey: board.custom ? resolveKey(board.custom) : board.boardKey,
+            offsetX: board.offsetX,
+            offsetY: board.offsetY,
+            rotated: board.rotated,
+          }))
+          const shared = catalogWith([], customBoards)
+          const boards: PlacedBoard[] = raw.map((board) =>
+            board.rotated && !canRotateBoard(board.boardKey, shared)
+              ? { ...board, rotated: false }
+              : board,
+          )
+
+          return {
+            customBoards,
+            boards,
+            placements: config.placements.map((p) => ({ ...p, id: nextId() })),
+            market: config.market as PriceMarketId,
+            customCurrency: config.currency,
+            overrides: config.overrides,
+            // Clamped rather than trusted: the decoder checks the shape of a
+            // link, but the numbers in it are still a stranger's.
+            extras: Object.fromEntries(
+              Object.entries(config.extras)
+                .map(([key, quantity]) => [key, clampExtra(quantity)] as const)
+                .filter(([, quantity]) => quantity !== 0),
+            ),
+            excluded: Object.fromEntries(config.excluded.map((k) => [k, true as const])),
+            selectedId: null,
+            // A link is a starting point, not a step you can undo past.
+            past: [],
+            future: [],
+          }
         }),
 
       setExtra: (key, quantity) =>
@@ -611,7 +804,7 @@ export const useConfig = create<ConfigState>()(
     }),
     {
       name: 'skadis-config',
-      version: 11,
+      version: 14,
       // v1 placements predate rotation; default them to upright rather than
       // discarding a saved configuration.
       migrate: migrateConfig,

@@ -7,7 +7,7 @@
  * lattice maths exactly as it was.
  */
 
-import { BOARDS, BY_KEY, isPlaceable, type BoardItem } from '../data/catalog'
+import { BOARDS, BY_KEY, isPlaceable, type BoardItem, type CatalogItem } from '../data/catalog'
 import type { PlacedBoard, Placement } from '../state/store'
 import {
   evaluatePlacement,
@@ -47,23 +47,41 @@ export interface WallBoard {
   byId: Map<HoleId, Hole>
 }
 
+/**
+ * The item map these functions resolve board keys against.
+ *
+ * Defaulted rather than required so every existing call site and test keeps
+ * working unchanged; the paths that must see a user-defined board pass
+ * `catalogWith(customParts, customBoards)` instead. Same shape as
+ * `resolvePlacements(placements, wall, byKey = BY_KEY)`.
+ */
+export type ItemMap = ReadonlyMap<string, CatalogItem>
+
 /** Whether this board is one that can be hung sideways at all. */
-export function canRotateBoard(boardKey: string): boolean {
-  const item = BY_KEY.get(boardKey)
+export function canRotateBoard(boardKey: string, byKey: ItemMap = BY_KEY): boolean {
+  const item = byKey.get(boardKey)
   return item?.kind === 'board' && item.rotatable
 }
 
-export function boardSpec(placed: PlacedBoard): OrientedBoard {
-  const item = (BY_KEY.get(placed.boardKey) ?? BOARDS[0]) as BoardItem
-  // A stored orientation is not trusted over the catalog: a saved wall, or a
-  // share link, can name a board that has since stopped being rotatable.
+export function boardSpec(placed: PlacedBoard, byKey: ItemMap = BY_KEY): OrientedBoard {
+  const resolved = byKey.get(placed.boardKey)
+  // A board whose definition has been deleted falls back rather than throwing.
+  const item = (resolved?.kind === 'board' ? resolved : BOARDS[0]) as BoardItem
+  // A stored orientation is not trusted over the catalog. This is a live path,
+  // not a hypothetical: every SKÅDIS board WAS rotatable and is not any more
+  // (F42), so a wall saved or shared before that change still carries the flag.
+  // `migrateConfig` clears it at v14 as well; this is the second line of
+  // defence, and the only one a share link from an older build gets.
   if (!placed.rotated || !item.rotatable) return { ...item, rotated: false }
+  // Only the dimensions swap. The grid is carried through untouched: rotation
+  // is handled inside `generateHoles`, which exchanges the lattice origins
+  // rather than the axes (findings F24).
   return { ...item, widthMm: item.heightMm, heightMm: item.widthMm, rotated: true }
 }
 
-export function buildWall(boards: readonly PlacedBoard[]): WallBoard[] {
+export function buildWall(boards: readonly PlacedBoard[], byKey: ItemMap = BY_KEY): WallBoard[] {
   return boards.map((placed, index) => {
-    const spec = boardSpec(placed)
+    const spec = boardSpec(placed, byKey)
     const holes = generateHoles(spec)
     return { index, spec, offsetX: placed.offsetX, offsetY: placed.offsetY, holes, byId: indexHoles(holes) }
   })
@@ -74,8 +92,8 @@ export function buildWall(boards: readonly PlacedBoard[]): WallBoard[] {
  * are derived rather than stored so adding or resizing a board can never leave
  * the wall with overlapping panels.
  */
-export function layoutBoards(boards: readonly PlacedBoard[]): PlacedBoard[] {
-  const specs = boards.map(boardSpec)
+export function layoutBoards(boards: readonly PlacedBoard[], byKey: ItemMap = BY_KEY): PlacedBoard[] {
+  const specs = boards.map((placed) => boardSpec(placed, byKey))
   const tallest = Math.max(...specs.map((s) => s.heightMm), 0)
 
   let x = 0
@@ -87,8 +105,11 @@ export function layoutBoards(boards: readonly PlacedBoard[]): PlacedBoard[] {
   })
 }
 
-export function wallSize(boards: readonly PlacedBoard[]): { widthMm: number; heightMm: number } {
-  const specs = boards.map(boardSpec)
+export function wallSize(
+  boards: readonly PlacedBoard[],
+  byKey: ItemMap = BY_KEY,
+): { widthMm: number; heightMm: number } {
+  const specs = boards.map((placed) => boardSpec(placed, byKey))
   const width =
     specs.reduce((sum, s) => sum + s.widthMm, 0) + BOARD_GAP_MM * Math.max(0, specs.length - 1)
   return { widthMm: width, heightMm: Math.max(...specs.map((s) => s.heightMm), 0) }

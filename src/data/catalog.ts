@@ -10,7 +10,7 @@
  * Regenerate the underlying data with `python3 data-raw/fetch_skadis_data.py`.
  */
 
-import type { PegPattern } from '../lib/grid'
+import type { HoleGrid, PegPattern, PegSpec } from '../lib/grid'
 
 export type MarketId = 'us' | 'gb' | 'de' | 'fr' | 'jp'
 export type LanguageId = 'en' | 'ja' | 'zh-Hant'
@@ -72,11 +72,31 @@ export interface BoardItem extends BaseItem {
    */
   latticeVerified: boolean
   /**
-   * Whether the panel can be hung a quarter turn round. False for the
-   * free-standing board: it sits on a stand at its bottom edge, so turning it
-   * sideways is not a thing you can do with the real product.
+   * Whether the panel can be hung a quarter turn round. **False for every board
+   * IKEA sells**, for two independent reasons:
+   *
+   * - The three wall boards: SKÅDIS slots are 5 x 15 mm UPRIGHT ovals, and an
+   *   accessory hooks by dropping a tab into one and letting gravity retain it
+   *   behind the panel. Turn the board and every slot lies down, so the tab has
+   *   nothing to drop into — the panel hangs fine and holds nothing. Reported
+   *   by a user and confirmed against the slot geometry (findings F42).
+   * - The free-standing board: it sits on a stand at its bottom edge, so there
+   *   is no sideways to hang it in the first place.
+   *
+   * True only for a user-defined board (`data/customBoards.ts`), whose geometry
+   * is the user's own statement — a round or square hole field turns perfectly
+   * well, and on a staggered one the turn exchanges the lattice tagging rather
+   * than merely swapping the dimensions (F24). A user-defined board with
+   * upright slots inherits the SKÅDIS problem; Help says so rather than the
+   * catalog deciding it for them.
    */
   rotatable: boolean
+  /**
+   * Hole geometry. Absent means SKÅDIS, which is every board IKEA sells — it is
+   * carried here so a user-defined board (`data/customBoards.ts`) can travel
+   * through `buildWall` and the mesh builder as an ordinary `BoardItem`.
+   */
+  grid?: HoleGrid
 }
 
 export interface AccessoryItem extends BaseItem {
@@ -99,6 +119,15 @@ export interface AccessoryItem extends BaseItem {
   patternEstimated: boolean
   /** False where IKEA publishes no product-level measurements at all. */
   dimsVerified: boolean
+  /**
+   * Peg geometry, for the builder that draws it. Absent means "draw no peg",
+   * which is every SKÅDIS item: IKEA publishes no peg dimensions, so inventing
+   * them for the catalog would put a guess on screen as though it were measured.
+   * Carried here so a user-defined part (`data/customParts.ts`) can travel
+   * through `buildAccessoryParts` as an ordinary `AccessoryItem` — exactly as
+   * `BoardItem.grid` does for a user-defined board.
+   */
+  pegs?: PegSpec
 }
 
 export type CatalogItem = BoardItem | AccessoryItem
@@ -128,7 +157,8 @@ export const BOARDS: BoardItem[] = [
     heightMm: 560,
     colorway: 'white',
     latticeVerified: true,
-    rotatable: true,
+    // Upright slots — a turned panel holds nothing (F42).
+    rotatable: false,
     names: { en: 'Pegboard 36×56', ja: '有孔ボード 36×56', 'zh-Hant': '洞洞板 36×56' },
   },
   {
@@ -140,7 +170,8 @@ export const BOARDS: BoardItem[] = [
     heightMm: 560,
     colorway: 'white',
     latticeVerified: true,
-    rotatable: true,
+    // Upright slots — a turned panel holds nothing (F42).
+    rotatable: false,
     names: { en: 'Pegboard 56×56', ja: '有孔ボード 56×56', 'zh-Hant': '洞洞板 56×56' },
   },
   {
@@ -152,7 +183,8 @@ export const BOARDS: BoardItem[] = [
     heightMm: 560,
     colorway: 'white',
     latticeVerified: true,
-    rotatable: true,
+    // Upright slots — a turned panel holds nothing (F42).
+    rotatable: false,
     names: { en: 'Pegboard 76×56', ja: '有孔ボード 76×56', 'zh-Hant': '洞洞板 76×56' },
   },
   {

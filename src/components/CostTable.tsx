@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BY_KEY } from '../data/catalog'
 import { isCustomKey } from '../data/customParts'
+import { catalogWith, isCustomBoardKey } from '../data/customBoards'
 import { countBreakdown } from '../lib/counts'
 import snapshotJson from '../data/price-snapshot.json'
 import { INTL_LOCALE } from '../i18n'
@@ -37,23 +38,36 @@ export function CostTable({ onPrint }: { onPrint: () => void }) {
     language, overrides, excluded, setOverride, toggleIncluded,
     setMarket, setCustomCurrency, setExtra,
   } = useConfig()
+  const customParts = useConfig((s) => s.customParts)
+  const customBoards = useConfig((s) => s.customBoards)
   const printAngle = useConfig((s) => s.printAngle)
   const setPrintAngle = useConfig((s) => s.setPrintAngle)
   const live = usePrices((s) => s.live)
   const liveMarket = usePrices((s) => s.liveMarket)
   const status = usePrices((s) => s.status)
 
+  const byKey = useMemo(
+    () => catalogWith(customParts, customBoards),
+    [customParts, customBoards],
+  )
+
   // Custom parts are a visualisation aid, not a purchase: they have no article
   // number and no price, so they are counted for the footnote and then left out
-  // of the list entirely.
+  // of the list entirely. User-defined boards get their own line rather than
+  // being folded into this one — they are not parts, and the count would lie.
   const customPlaced = useMemo(
     () => placements.filter((p) => isCustomKey(p.itemKey)).length,
     [placements],
   )
 
+  const customBoardsPlaced = useMemo(
+    () => boards.filter((b) => isCustomBoardKey(b.boardKey)).length,
+    [boards],
+  )
+
   const { base, final, kitSets } = useMemo(
-    () => countBreakdown(boards, placements, extras, BY_KEY),
-    [boards, placements, extras],
+    () => countBreakdown(boards, placements, extras, byKey),
+    [boards, placements, extras, byKey],
   )
 
   const entries = useMemo<CostInput[]>(
@@ -191,6 +205,9 @@ export function CostTable({ onPrint }: { onPrint: () => void }) {
       {kitSets > 0 && <p className="cost__status">{t('cost.kitNote', { count: kitSets })}</p>}
       {customPlaced > 0 && (
         <p className="cost__status">{t('custom.notCostedNote', { count: customPlaced })}</p>
+      )}
+      {customBoardsPlaced > 0 && (
+        <p className="cost__status">{t('board.notCostedNote', { count: customBoardsPlaced })}</p>
       )}
 
       <ShoppingList lines={lines} total={total} market={market} currency={currency} />

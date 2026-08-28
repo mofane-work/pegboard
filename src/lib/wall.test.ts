@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { BY_KEY, isPlaceable } from '../data/catalog'
+import { BOARDS, BY_KEY, isPlaceable } from '../data/catalog'
 import {
   BOARD_GAP_MM,
   MAX_BOARDS,
@@ -14,6 +14,8 @@ import {
   worldToWall,
 } from './wall'
 import { useConfig, type PlacedBoard } from '../state/store'
+import { catalogWith, type CustomBoard } from '../data/customBoards'
+import { SKADIS_GRID } from './grid'
 
 const one: PlacedBoard[] = [{ boardKey: 'board-56x56-white', offsetX: 0, offsetY: 0, rotated: false }]
 const two: PlacedBoard[] = [
@@ -239,22 +241,39 @@ describe('board management', () => {
 })
 
 describe('board orientation on the wall', () => {
-  const upright: PlacedBoard = { boardKey: 'board-36x56-white', offsetX: 0, offsetY: 0, rotated: false }
+  /**
+   * A user-defined panel of exactly SKÅDIS 36x56 geometry. Turning is a custom
+   * board's privilege now (F42), so the orientation maths has to be exercised
+   * through one — and matching the real panel's dimensions and grid keeps the
+   * numbers below the same ones this block has always asserted.
+   */
+  const custom: CustomBoard = {
+    key: 'custom-board:turned',
+    name: 'Test panel',
+    cols: 9,
+    rows: 14,
+    grid: SKADIS_GRID,
+  }
+  const byKey = catalogWith([], [custom])
+  const upright: PlacedBoard = { boardKey: custom.key, offsetX: 0, offsetY: 0, rotated: false }
   const turned: PlacedBoard = { ...upright, rotated: true }
 
   it('reports the dimensions a turned panel actually hangs at', () => {
-    expect(boardSpec(upright)).toMatchObject({ widthMm: 360, heightMm: 560, rotated: false })
-    expect(boardSpec(turned)).toMatchObject({ widthMm: 560, heightMm: 360, rotated: true })
+    expect(boardSpec(upright, byKey)).toMatchObject({ widthMm: 360, heightMm: 560, rotated: false })
+    expect(boardSpec(turned, byKey)).toMatchObject({ widthMm: 560, heightMm: 360, rotated: true })
   })
 
   it('keeps the catalog identity so costing and naming are untouched', () => {
-    expect(boardSpec(turned).key).toBe('board-36x56-white')
-    expect(boardSpec(turned).itemNos).toEqual(boardSpec(upright).itemNos)
+    expect(boardSpec(turned, byKey).key).toBe(custom.key)
+    expect(boardSpec(turned, byKey).itemNos).toEqual(boardSpec(upright, byKey).itemNos)
   })
 
   it('sizes and lays out the wall from the turned dimensions', () => {
-    expect(wallSize([turned])).toEqual({ widthMm: 560, heightMm: 360 })
-    const laid = layoutBoards([turned, { boardKey: 'board-56x56-white', offsetX: 0, offsetY: 0, rotated: false }])
+    expect(wallSize([turned], byKey)).toEqual({ widthMm: 560, heightMm: 360 })
+    const laid = layoutBoards(
+      [turned, { boardKey: 'board-56x56-white', offsetX: 0, offsetY: 0, rotated: false }],
+      byKey,
+    )
     // Second board starts past the turned panel's 560 mm width, not its 360 mm.
     expect(laid[1].offsetX).toBe(560 + BOARD_GAP_MM)
     // Vertically centred on the taller neighbour.
@@ -262,15 +281,29 @@ describe('board orientation on the wall', () => {
   })
 
   it('generates the turned hole field, not the upright one', () => {
-    const [board] = buildWall([turned])
+    const [board] = buildWall([turned], byKey)
     expect(board.holes).toHaveLength(229)
     expect(Math.max(...board.holes.map((h) => h.x))).toBeCloseTo(540)
   })
 
-  it('refuses an orientation the free-standing board cannot hold', () => {
-    expect(canRotateBoard('board-36x56-white')).toBe(true)
-    expect(canRotateBoard('board-56x37-freestanding')).toBe(false)
-    // A stale saved wall or share link can still name one; the catalog wins.
+  /**
+   * The rule this file exists to pin since F42: no board IKEA sells turns. The
+   * three wall boards because their slots are upright and a lying-down slot
+   * holds nothing; the free-standing one because it stands on its bottom edge.
+   * Two reasons, one answer.
+   */
+  it('refuses the turn for every board IKEA sells', () => {
+    for (const board of BOARDS) {
+      expect([board.key, canRotateBoard(board.key)]).toEqual([board.key, false])
+    }
+    expect(canRotateBoard(custom.key, byKey)).toBe(true)
+  })
+
+  it('ignores a stored orientation the catalog no longer allows', () => {
+    // A wall saved or shared before F42 still carries the flag. The catalog
+    // wins, so the panel comes back upright at its own dimensions.
+    const stale: PlacedBoard = { boardKey: 'board-36x56-white', offsetX: 0, offsetY: 0, rotated: true }
+    expect(boardSpec(stale)).toMatchObject({ widthMm: 360, heightMm: 560, rotated: false })
     const stand: PlacedBoard = { boardKey: 'board-56x37-freestanding', offsetX: 0, offsetY: 0, rotated: true }
     expect(boardSpec(stand)).toMatchObject({ widthMm: 560, heightMm: 370, rotated: false })
   })

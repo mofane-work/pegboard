@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { BY_KEY, isPlaceable } from '../data/catalog'
 import { catalogWithCustom, newCustomKey, type CustomPart } from '../data/customParts'
-import { PITCH_MM, holeId } from './grid'
+import { catalogWith, type CustomBoard } from '../data/customBoards'
+import { PITCH_MM, SKADIS_GRID, SKADIS_PEGS, holeId } from './grid'
 import { nudgePlacement, type NudgeDirection } from './nudge'
 import { buildWall, layoutBoards, type WallBoard } from './wall'
 import type { PlacedBoard, Placement } from '../state/store'
@@ -14,8 +15,8 @@ const TWO: PlacedBoard[] = [
   { boardKey: 'board-56x56-white', offsetX: 0, offsetY: 0, rotated: false },
 ]
 
-function wallOf(boards: PlacedBoard[]): WallBoard[] {
-  return buildWall(layoutBoards(boards))
+function wallOf(boards: PlacedBoard[], byKey = BY_KEY): WallBoard[] {
+  return buildWall(layoutBoards(boards, byKey), byKey)
 }
 
 let seq = 0
@@ -202,6 +203,7 @@ describe('custom parts', () => {
     rows: 2,
     depthMm: 60,
     lattice: 'A',
+    pegs: { ...SKADIS_PEGS },
   }
   const byKey = catalogWithCustom([part])
 
@@ -224,7 +226,28 @@ describe('custom parts', () => {
 describe('a turned board', () => {
   // Rotation exchanges the two lattice origins (F24). A nudge must keep working
   // and must still stay on one lattice.
-  const wall = wallOf([{ boardKey: 'board-36x56-white', offsetX: 0, offsetY: 0, rotated: true }])
+  //
+  // A USER-DEFINED panel, of exactly SKÅDIS 36x56 geometry. No SKÅDIS board
+  // turns any more (F42), and `buildWall` honours the catalog over a stored
+  // flag — so naming a real 36×56 here would quietly build an upright board and
+  // this block would pass while testing nothing.
+  const turnable: CustomBoard = {
+    key: 'custom-board:turned',
+    name: 'Turned panel',
+    cols: 9,
+    rows: 14,
+    grid: SKADIS_GRID,
+  }
+  const byKey = catalogWith([], [turnable])
+  const wall = wallOf(
+    [{ boardKey: turnable.key, offsetX: 0, offsetY: 0, rotated: true }],
+    byKey,
+  )
+
+  it('really is turned, or the cases below prove nothing', () => {
+    expect(wall[0].spec.rotated).toBe(true)
+    expect(wall[0].spec.widthMm).toBe(560)
+  })
 
   it('moves one pitch in every direction on a rotated panel', () => {
     const item = placed('hook-large', holeId('B', 4, 4))

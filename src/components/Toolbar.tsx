@@ -1,6 +1,12 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BOARDS, type LanguageId } from '../data/catalog'
+import {
+  MAX_CUSTOM_BOARDS,
+  catalogWith,
+  isCustomBoardKey,
+  type CustomBoard,
+} from '../data/customBoards'
 import { boardSpec, canRotateBoard, MAX_BOARDS } from '../lib/wall'
 import { LANGUAGES } from '../i18n'
 import { MAX_BOARD_NAME_LENGTH, useConfig, type ThemePreference } from '../state/store'
@@ -26,6 +32,7 @@ export function Toolbar({
   onResetView,
   onOpenHelp,
   onOpenAppearance,
+  onOpenBoardForm,
   onShare,
   shareState,
   shareDropped,
@@ -33,6 +40,8 @@ export function Toolbar({
   onResetView: () => void
   onOpenHelp: () => void
   onOpenAppearance: () => void
+  /** Opens the pegboard editor; `null` creates a new definition. */
+  onOpenBoardForm: (editing: CustomBoard | null) => void
   onShare: () => void
   shareState: 'idle' | 'copied' | 'failed'
   /** Custom placements left out of the last copied link. */
@@ -47,6 +56,10 @@ export function Toolbar({
     viewHeight, setViewHeight,
     clearBoard, undo, redo, past, future,
   } = useConfig()
+  const customBoards = useConfig((s) => s.customBoards)
+  // The board picker has to resolve a user-defined board like any other, or a
+  // custom panel would report itself as the fallback 36×56.
+  const byKey = useMemo(() => catalogWith([], customBoards), [customBoards])
 
   return (
     <header className="toolbar">
@@ -127,8 +140,8 @@ export function Toolbar({
         <div className="toolbar__controls toolbar__controls--boards">
           {boards.map((placed, index) => {
             const suffix = boards.length > 1 ? ` ${index + 1}` : ''
-            const rotatable = canRotateBoard(placed.boardKey)
-            const spec = boardSpec(placed)
+            const rotatable = canRotateBoard(placed.boardKey, byKey)
+            const spec = boardSpec(placed, byKey)
             // What this panel is called: the user's name for it, or its
             // position on the wall. Everything that needs to refer to the board
             // — the caption, the select, both buttons — uses this one string.
@@ -164,17 +177,44 @@ export function Toolbar({
                         {board.names[language]}
                       </option>
                     ))}
+                    {customBoards.map((board) => (
+                      <option key={board.key} value={board.key}>
+                        {board.name}
+                      </option>
+                    ))}
                   </select>
-                  <button
-                    type="button"
-                    aria-label={`${t('toolbar.rotateBoard')}${suffix}`}
-                    aria-pressed={spec.rotated}
-                    title={rotatable ? t('toolbar.rotateBoard') : t('toolbar.rotateBoardFixed')}
-                    disabled={!rotatable}
-                    onClick={() => rotateBoard(index)}
-                  >
-                    ⟳
-                  </button>
+                  {/* Editing a definition is reachable from the panel using it,
+                      which is where someone notices it is wrong. */}
+                  {isCustomBoardKey(placed.boardKey) && (
+                    <button
+                      type="button"
+                      aria-label={`${t('board.edit')}${suffix}`}
+                      title={t('board.edit')}
+                      aria-haspopup="dialog"
+                      onClick={() => {
+                        const board = customBoards.find((b) => b.key === placed.boardKey)
+                        if (board) onOpenBoardForm(board)
+                      }}
+                    >
+                      ✎
+                    </button>
+                  )}
+                  {/* Hidden, not disabled. No board IKEA sells can be turned —
+                      SKÅDIS slots are upright (F42) — so a disabled control
+                      would sit dead on every default wall. The rule and its
+                      reason live in Help (`n4`) instead; this button appears
+                      only for a user-defined board, which can be turned. */}
+                  {rotatable && (
+                    <button
+                      type="button"
+                      aria-label={`${t('toolbar.rotateBoard')}${suffix}`}
+                      aria-pressed={spec.rotated}
+                      title={t('toolbar.rotateBoard')}
+                      onClick={() => rotateBoard(index)}
+                    >
+                      ⟳
+                    </button>
+                  )}
                   {boards.length > 1 && (
                     <button
                       type="button"
@@ -199,6 +239,18 @@ export function Toolbar({
               {t('toolbar.addBoard')}
             </button>
           )}
+
+          {/* Deliberately a button rather than an option in the select: the
+              select's job is choosing a board, and one that opens a dialog on
+              change is a different verb wearing the same control. */}
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            disabled={customBoards.length >= MAX_CUSTOM_BOARDS}
+            onClick={() => onOpenBoardForm(null)}
+          >
+            {t('toolbar.customBoard')}
+          </button>
         </div>
 
         <div className="toolbar__controls toolbar__controls--actions">

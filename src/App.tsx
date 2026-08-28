@@ -5,11 +5,13 @@ import { Palette } from './components/Palette'
 import { CostTable } from './components/CostTable'
 import { Help } from './components/Help'
 import { CustomPartForm } from './components/CustomPartForm'
+import { CustomBoardForm } from './components/CustomBoardForm'
 import { Appearance } from './components/Appearance'
 import { Scene } from './components/Scene'
 import { SelectionControls } from './components/SelectionControls'
 import { isPlaceable } from './data/catalog'
-import { catalogWithCustom, isCustomKey, type CustomPart } from './data/customParts'
+import { isCustomKey, type CustomPart } from './data/customParts'
+import { catalogWith, type CustomBoard } from './data/customBoards'
 import { unresolvablePlacementIds } from './lib/placements'
 import { nudgePlacement, type NudgeDirection } from './lib/nudge'
 import { buildWall, layoutBoards, occupiedRects, snapOnWall, wallSize } from './lib/wall'
@@ -52,6 +54,7 @@ function App() {
   const place = useConfig((s) => s.place)
   const placements = useConfig((s) => s.placements)
   const customParts = useConfig((s) => s.customParts)
+  const customBoards = useConfig((s) => s.customBoards)
   const pruneUnresolvable = useConfig((s) => s.pruneUnresolvable)
   const applyShared = useConfig((s) => s.applyShared)
   const undo = useConfig((s) => s.undo)
@@ -73,6 +76,10 @@ function App() {
   const [customOpen, setCustomOpen] = useState(false)
   const [appearanceOpen, setAppearanceOpen] = useState(false)
   const [editingCustom, setEditingCustom] = useState<CustomPart | null>(null)
+  // `undefined` means the pegboard editor is shut; `null` means it is open on a
+  // new definition. Two states in one field, because "open" and "which board"
+  // are never independent.
+  const [boardForm, setBoardForm] = useState<CustomBoard | null | undefined>(undefined)
   // The 3D pane looks like a picture until you try it. Show a hint until the
   // camera actually moves, then take it away for the rest of the session. It is
   // deliberately NOT a store field: a cosmetic, session-scoped flag is not worth
@@ -82,8 +89,12 @@ function App() {
   // Empty until a page is configured, and then it never changes.
   const support = useMemo(() => supportUrl(), [])
 
-  // The catalog as this user sees it: real SKÅDIS plus their own placeholders.
-  const byKey = useMemo(() => catalogWithCustom(customParts), [customParts])
+  // The catalog as this user sees it: real SKÅDIS plus their own placeholders
+  // and their own boards.
+  const byKey = useMemo(
+    () => catalogWith(customParts, customBoards),
+    [customParts, customBoards],
+  )
 
   // The splash in index.html has been on screen since the first byte. React is
   // running now, so take it away.
@@ -150,7 +161,7 @@ function App() {
   // never mounts and an invisible item can never reach the total.
   useEffect(() => {
     pruneUnresolvable(
-      unresolvablePlacementIds(placements, buildWall(layoutBoards(boards)), byKey),
+      unresolvablePlacementIds(placements, buildWall(layoutBoards(boards, byKey), byKey), byKey),
     )
   }, [boards, placements, byKey, pruneUnresolvable])
 
@@ -208,11 +219,11 @@ function App() {
         event.preventDefault()
         const state = useConfig.getState()
         const target = nudgePlacement(
-          buildWall(layoutBoards(state.boards)),
+          buildWall(layoutBoards(state.boards, byKey), byKey),
           state.placements,
           selectedId,
           direction,
-          catalogWithCustom(state.customParts),
+          byKey,
           state.allowOverlap,
         )
         if (target) move(selectedId, target.holeId, target.rotation, target.boardIndex)
@@ -220,9 +231,9 @@ function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [selectedId, remove, rotate, rotateDrag, draggingKey, undo, redo, move])
+  }, [selectedId, remove, rotate, rotateDrag, draggingKey, undo, redo, move, byKey])
 
-  const wall = buildWall(layoutBoards(boards))
+  const wall = buildWall(layoutBoards(boards, byKey), byKey)
 
   async function share() {
     const state = useConfig.getState()
@@ -236,7 +247,15 @@ function App() {
 
     const url = buildShareUrl(
       {
-        boards: state.boards,
+        // A user-defined board has no key the recipient can resolve, so it
+        // travels as geometry. Dropping it the way a custom PART is dropped
+        // would take the whole panel and everything on it (F39).
+        boards: state.boards.map((board) => {
+          const custom = state.customBoards.find((b) => b.key === board.boardKey)
+          return custom
+            ? { ...board, custom: { cols: custom.cols, rows: custom.rows, grid: custom.grid } }
+            : board
+        }),
         market: state.market,
         currency: state.market === 'custom' ? state.customCurrency : 'USD',
         placements: shareable.map(({ itemKey, holeId, rotation, boardIndex }) => ({
@@ -271,7 +290,7 @@ function App() {
     const item = byKey.get(itemKey)
     if (!item || !isPlaceable(item)) return false
 
-    const size = wallSize(boards)
+    const size = wallSize(boards, byKey)
     const centreX = size.widthMm / 2
     const centreY = size.heightMm / 2
 
@@ -312,6 +331,7 @@ function App() {
         onResetView={() => setViewNonce((n) => n + 1)}
         onOpenHelp={() => setHelpOpen(true)}
         onOpenAppearance={() => setAppearanceOpen(true)}
+        onOpenBoardForm={(editing) => setBoardForm(editing)}
         onShare={() => void share()}
         shareState={shareState}
         shareDropped={shareDropped}
@@ -385,6 +405,9 @@ function App() {
         <CustomPartForm editing={editingCustom} onClose={() => setCustomOpen(false)} />
       )}
       {appearanceOpen && <Appearance onClose={() => setAppearanceOpen(false)} />}
+      {boardForm !== undefined && (
+        <CustomBoardForm editing={boardForm} onClose={() => setBoardForm(undefined)} />
+      )}
     </div>
   )
 }

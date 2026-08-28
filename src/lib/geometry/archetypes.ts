@@ -20,6 +20,7 @@ import {
   type Vector3Tuple,
 } from 'three'
 import type { AccessoryItem, Archetype } from '../../data/catalog'
+import { bodyOriginOffset, type PegPattern, type PegSpec } from '../grid'
 
 export interface Part {
   geometry: BufferGeometry
@@ -96,7 +97,8 @@ function roundedRect(w: number, h: number, r: number): Shape {
 
 /**
  * A user-defined placeholder: a rounded-rectangle prism extruded out from the
- * board face. Extrusion runs +z from 0, so nothing sits behind the panel.
+ * board face. Extrusion runs +z from 0, so the BODY never sits behind the
+ * panel; only a peg is allowed to (see `pegParts`).
  */
 function customBoxParts(w: number, h: number, d: number): Part[] {
   const geometry = new ExtrudeGeometry(roundedRect(w, h, customCornerRadius(w, h, d)), {
@@ -107,6 +109,46 @@ function customBoxParts(w: number, h: number, d: number): Part[] {
   geometry.computeVertexNormals()
 
   return [{ geometry, position: [0, 0, 0] }]
+}
+
+/**
+ * The pegs themselves, drawn behind the board face.
+ *
+ * Positions are read off the item's own `PegPattern` rather than recomputed, so
+ * every layout — including the two-row `corners` — is handled without this
+ * builder knowing anything about cells or layouts. In the builder frame the
+ * anchor peg sits at `-bodyOriginOffset`, and each further peg is that many
+ * lattice steps away at the part's own pitch.
+ *
+ * This is the one thing in the app drawn at negative z. It is mostly hidden
+ * inside the panel, which is the point: what you see from the side or the back
+ * is a peg that is too short to reach through, or too long and poking out.
+ */
+export function pegParts(pattern: PegPattern, pegs: PegSpec): Part[] {
+  const { lengthMm, pitchMm, shape, widthMm, heightMm } = pegs
+  if (!(lengthMm > 0)) return []
+
+  const [ox, oy] = bodyOriginOffset(pattern)
+  const anchorX = -ox
+  const anchorY = -oy
+  const positions: Vector3Tuple[] = [[anchorX, anchorY, -lengthMm / 2]]
+  for (const [dCol, dRow] of pattern.offsets) {
+    positions.push([anchorX + dCol * pitchMm, anchorY + dRow * pitchMm, -lengthMm / 2])
+  }
+
+  return positions.map((position) => {
+    if (shape === 'round') {
+      return {
+        geometry: new CylinderGeometry(widthMm / 2, widthMm / 2, lengthMm, 12),
+        position,
+        // Cylinders stand on Y; a peg points along Z, into the board.
+        rotation: [Math.PI / 2, 0, 0] as Vector3Tuple,
+      }
+    }
+    const w = shape === 'slot-h' ? heightMm : widthMm
+    const h = shape === 'slot-h' ? widthMm : shape === 'square' ? widthMm : heightMm
+    return { geometry: new BoxGeometry(w, h, lengthMm), position }
+  })
 }
 
 export function buildAccessoryParts(item: AccessoryItem): Part[] {
@@ -194,7 +236,9 @@ export function buildAccessoryParts(item: AccessoryItem): Part[] {
       ]
 
     case 'customBox':
-      return customBoxParts(w, h, d)
+      return item.pattern && item.pegs
+        ? [...customBoxParts(w, h, d), ...pegParts(item.pattern, item.pegs)]
+        : customBoxParts(w, h, d)
 
     default:
       // Connectors and bundles are cost-only and never rendered, but a visible

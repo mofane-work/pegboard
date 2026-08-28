@@ -38,8 +38,9 @@ export function Scene({
           offsetY: b.offsetY,
           rotated: b.spec.rotated,
         })),
+        byKey,
       ),
-    [wall],
+    [wall, byKey],
   )
   /** Wall space has its origin at the bottom-left; the scene is centred. */
   const toScene = (x: number, y: number): [number, number] => [

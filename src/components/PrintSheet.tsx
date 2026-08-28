@@ -1,10 +1,10 @@
 import { useTranslation } from 'react-i18next'
-import { SLOT_HEIGHT_MM, SLOT_WIDTH_MM } from '../lib/grid'
+import { gridOf } from '../lib/grid'
 import { boardSpec, buildWall, layoutBoards, wallSize } from '../lib/wall'
 import { resolvePlacements } from '../lib/placements'
 import { FRONT, ISOMETRIC, project, projectedExtent, type ViewAngle } from '../lib/printProjection'
 import { BY_KEY } from '../data/catalog'
-import { catalogWithCustom } from '../data/customParts'
+import { catalogWith } from '../data/customBoards'
 import { useConfig } from '../state/store'
 import { useListText } from './useListText'
 import type { CostLine, CostTotal, PriceMarketId } from '../lib/pricing'
@@ -31,15 +31,17 @@ export function PrintSheet({ lines, total, market, currency, angle }: PrintSheet
   const boards = useConfig((s) => s.boards)
   const placements = useConfig((s) => s.placements)
   const customParts = useConfig((s) => s.customParts)
+  const customBoards = useConfig((s) => s.customBoards)
   const language = useConfig((s) => s.language)
 
   const listText = useListText(lines, total, market, currency, 'text')
-  const laid = layoutBoards(boards)
-  const wall = buildWall(laid)
-  const size = wallSize(laid)
+  const byKey = catalogWith(customParts, customBoards)
+  const laid = layoutBoards(boards, byKey)
+  const wall = buildWall(laid, byKey)
+  const size = wallSize(laid, byKey)
   // The diagram draws custom parts even though the parts list omits them: the
   // drawing is there to match what is on screen, the list is what you buy.
-  const resolved = resolvePlacements(placements, wall, catalogWithCustom(customParts))
+  const resolved = resolvePlacements(placements, wall, byKey)
 
   const extent = projectedExtent(size.widthMm, size.heightMm, 5, angle)
   const viewBox = [
@@ -61,7 +63,7 @@ export function PrintSheet({ lines, total, market, currency, angle }: PrintSheet
         <p>
           {laid
             .map((b) => {
-              const spec = boardSpec(b)
+              const spec = boardSpec(b, byKey)
               const product = BY_KEY.get(b.boardKey)?.names[language]
               // The user's own name first, if they gave one — but never
               // instead of the product. This is a build document: whoever
@@ -92,22 +94,44 @@ export function PrintSheet({ lines, total, market, currency, angle }: PrintSheet
           return <polygon key={b.index} points={outline} className="sheet__board" />
         })}
 
-        {wall.flatMap((b) =>
-          b.holes.map((hole) => {
+        {wall.flatMap((b) => {
+          const grid = gridOf(b.spec)
+          // Same fold the mesh builder uses: a turned panel and a horizontal
+          // slot are the same statement, so the sheet cannot disagree with the
+          // 3D view about which way a slot lies.
+          const horizontal = (grid.shape === 'slot-h') !== Boolean(b.spec.rotated)
+          const halfW = (horizontal ? grid.holeHeightMm : grid.holeWidthMm) / 2
+          const halfH = (horizontal ? grid.holeWidthMm : grid.holeHeightMm) / 2
+
+          return b.holes.map((hole) => {
             const [x, y] = project(...toWall(hole.x + b.offsetX, hole.y + b.offsetY), 0, angle)
+            const key = `${b.index}-${hole.id}`
+
+            if (grid.shape === 'square') {
+              return (
+                <rect
+                  key={key}
+                  x={x - grid.holeWidthMm / 2}
+                  y={y - grid.holeWidthMm / 2}
+                  width={grid.holeWidthMm}
+                  height={grid.holeWidthMm}
+                  className="sheet__slot"
+                />
+              )
+            }
+
             return (
-            <ellipse
-              key={`${b.index}-${hole.id}`}
-              cx={x}
-              cy={y}
-              // Slots turn with the panel, exactly as they do in the 3D view.
-              rx={(b.spec.rotated ? SLOT_HEIGHT_MM : SLOT_WIDTH_MM) / 2}
-              ry={(b.spec.rotated ? SLOT_WIDTH_MM : SLOT_HEIGHT_MM) / 2}
-              className="sheet__slot"
-            />
+              <ellipse
+                key={key}
+                cx={x}
+                cy={y}
+                rx={grid.shape === 'round' ? grid.holeWidthMm / 2 : halfW}
+                ry={grid.shape === 'round' ? grid.holeWidthMm / 2 : halfH}
+                className="sheet__slot"
+              />
             )
-          }),
-        )}
+          })
+        })}
 
         {resolved.map(({ placement, pattern, hole, board: b }) => {
           // Draw each accessory's footprint, which is what tells someone where

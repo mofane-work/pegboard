@@ -57,7 +57,7 @@ describe('round trip', () => {
 
   it('stays a readable string rather than an opaque blob', () => {
     const encoded = encodeConfig(config())
-    expect(encoded.startsWith('v3~')).toBe(true)
+    expect(encoded.startsWith('v4~')).toBe(true)
     expect(encoded).toContain('hook-large')
   })
 })
@@ -177,6 +177,15 @@ describe('custom parts must never reach the encoder', () => {
   })
 })
 
+/**
+ * The codec is deliberately blind to the catalog: it round-trips whatever flag
+ * it is handed. Since F42 no SKÅDIS board is rotatable, so a link like these is
+ * only ever written by an older build — but the flag must still survive the
+ * trip, because a user-defined board turns and the format is shared. Refusing
+ * it here would push the rule into the wrong layer; `applyShared` in
+ * `state/store.ts` is what drops an orientation the catalog will not honour,
+ * and `App.test.tsx` covers that.
+ */
 describe('board orientation in a link', () => {
   const turned = config({
     boards: [
@@ -204,5 +213,90 @@ describe('board orientation in a link', () => {
   it('rejects a board flag it does not recognise rather than guessing', () => {
     expect(decodeConfig(encodeConfig(turned).replace('*r', '*x'))).toBeNull()
     expect(decodeConfig(encodeConfig(turned).replace('*r', '*r*r'))).toBeNull()
+  })
+})
+
+describe('user-defined boards in a link', () => {
+  const CUSTOM = {
+    cols: 12,
+    rows: 9,
+    grid: {
+      pitchMm: 25.4,
+      arrangement: 'aligned' as const,
+      shape: 'round' as const,
+      holeWidthMm: 6.35,
+      holeHeightMm: 6.35,
+      thicknessMm: 6.35,
+    },
+  }
+
+  function withCustom(rotated = false) {
+    return {
+      boards: [{ boardKey: 'custom-board:x', offsetX: 0, offsetY: 0, rotated, custom: CUSTOM }],
+      market: 'us',
+      currency: 'USD',
+      placements: [],
+      excluded: [],
+      overrides: {},
+      extras: {},
+    }
+  }
+
+  it('carries the geometry rather than a key the recipient cannot resolve', () => {
+    const decoded = decodeConfig(encodeConfig(withCustom()))
+    expect(decoded?.boards[0].custom).toEqual(CUSTOM)
+  })
+
+  it('carries orientation alongside the geometry', () => {
+    const decoded = decodeConfig(encodeConfig(withCustom(true)))
+    expect(decoded?.boards[0].rotated).toBe(true)
+    expect(decoded?.boards[0].custom).toEqual(CUSTOM)
+  })
+
+  it('does not leak the name the sender gave it', () => {
+    // Free text the user typed stays local, exactly as PlacedBoard.name does.
+    expect(encodeConfig(withCustom())).not.toContain('custom-board')
+  })
+
+  it('mixes a stock board and a custom one in the same wall', () => {
+    const config = withCustom()
+    config.boards.unshift({
+      boardKey: 'board-76x56-white',
+      offsetX: 0,
+      offsetY: 0,
+      rotated: true,
+      custom: undefined as never,
+    })
+    const decoded = decodeConfig(encodeConfig(config))
+
+    expect(decoded?.boards[0].boardKey).toBe('board-76x56-white')
+    expect(decoded?.boards[0].rotated).toBe(true)
+    expect(decoded?.boards[1].custom).toEqual(CUSTOM)
+  })
+
+  it('still reads a v3 link, which has no board carrying geometry', () => {
+    const v3 = 'v3~board-56x56-white*r~us~USD~A*1*1*hook-large*0*0~~~'
+    expect(decodeConfig(v3)?.boards[0]).toEqual({
+      boardKey: 'board-56x56-white',
+      offsetX: 0,
+      offsetY: 0,
+      rotated: true,
+    })
+  })
+
+  it('rejects a custom board with a field missing rather than guessing it', () => {
+    expect(decodeConfig('v4~c*12*9*25.4*o*6.35*6.35~us~USD~~~~')).toBeNull()
+  })
+
+  it('rejects a hole shape it does not know', () => {
+    expect(decodeConfig('v4~c*12*9*25.4*Z*6.35*6.35*6.35*a~us~USD~~~~')).toBeNull()
+  })
+
+  it('rejects a dimension that is not a number', () => {
+    expect(decodeConfig('v4~c*12*9*wide*o*6.35*6.35*6.35*a~us~USD~~~~')).toBeNull()
+  })
+
+  it('rejects an arrangement flag it does not recognise', () => {
+    expect(decodeConfig('v4~c*12*9*25.4*o*6.35*6.35*6.35*x~us~USD~~~~')).toBeNull()
   })
 })

@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { BY_KEY } from '../data/catalog'
 import { countBreakdown } from './counts'
 import { catalogWithCustom } from '../data/customParts'
+import { catalogWith, clampCustomBoard } from '../data/customBoards'
 import type { PlacedBoard, Placement } from '../state/store'
+import { SKADIS_PEGS } from './grid'
 
 const BOARD: PlacedBoard = {
   boardKey: 'board-56x56-white',
@@ -62,11 +64,68 @@ describe('base — what the wall itself needs', () => {
   })
 
   it('never counts a custom part, which has no article number to buy', () => {
-    const parts = [{ key: 'custom:1', name: 'Router', cols: 2, rows: 2, depthMm: 60, lattice: 'A' as const }]
+    const parts = [
+      {
+        key: 'custom:1',
+        name: 'Router',
+        cols: 2,
+        rows: 2,
+        depthMm: 60,
+        lattice: 'A' as const,
+        pegs: { ...SKADIS_PEGS },
+      },
+    ]
     const placed = hooks(1, 'custom:1')
     const { base } = run([board()], placed, {}, catalogWithCustom(parts))
     expect(base.has('custom:1')).toBe(false)
     expect(base.get('board-56x56-white')).toBe(1)
+  })
+
+  it('never counts a user-defined board, which has no article number either', () => {
+    const custom = clampCustomBoard({
+      key: 'custom-board:1',
+      name: 'Printed',
+      cols: 8,
+      rows: 8,
+      grid: {
+        pitchMm: 40,
+        arrangement: 'staggered',
+        shape: 'slot-v',
+        holeWidthMm: 5,
+        holeHeightMm: 15,
+        thicknessMm: 5,
+      },
+    })
+    const byKey = catalogWith([], [custom])
+    const { base } = run([board({ boardKey: custom.key })], hooks(2), {}, byKey)
+
+    expect(base.has(custom.key)).toBe(false)
+    // What hangs on it is still a real purchase — only the panel is not.
+    expect(base.get('hook-large')).toBe(2)
+  })
+
+  it('still counts the connectors a wall of custom boards needs', () => {
+    // The panels may be self-printed; the fixings that join them are not, and
+    // a wall you cannot assemble is the failure `connectorsNeeded` prevents.
+    const custom = clampCustomBoard({
+      key: 'custom-board:1',
+      name: 'Printed',
+      cols: 8,
+      rows: 8,
+      grid: {
+        pitchMm: 40,
+        arrangement: 'staggered',
+        shape: 'slot-v',
+        holeWidthMm: 5,
+        holeHeightMm: 15,
+        thicknessMm: 5,
+      },
+    })
+    const byKey = catalogWith([], [custom])
+    const wall = [board({ boardKey: custom.key }), board({ boardKey: custom.key })]
+    const { base } = run(wall, [], {}, byKey)
+
+    expect(base.get('connector-board')).toBe(1)
   })
 })
 

@@ -1087,6 +1087,15 @@ select:hover {
   font-size: var(--font-size-sm);
 }
 
+/* Divides the body fields from the peg fields, which are a separate subject. */
+.custom__section {
+  margin: var(--space-2) 0 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
 .custom__field {
   display: flex;
   flex-direction: column;
@@ -1117,6 +1126,61 @@ select:hover {
   margin-inline-end: auto;
   border-color: var(--color-danger);
   color: var(--color-danger);
+}
+
+/* Pegboard editor — .custom's dialog, with rows that are not always threes.
+
+   `.custom__row` is a fixed 3-column grid. This dialog pairs fields as often as
+   it triples them, and a two-field row in a three-column grid leaves a hole the
+   width of a control, so the columns are auto-fitted here instead. */
+.board-form .custom__row {
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+}
+
+/* The peg section's two-way choice. SKÅDIS shows a one-line summary and nothing
+   else; self-defined expands the six fields below it. Same shape as the export
+   format switch — a pressed button, not a disclosure triangle, because the two
+   sides are alternatives rather than a detail of one another. */
+.custom__modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.custom__mode {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-size-sm);
+}
+
+.custom__mode--on {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.board-form__presets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.board-form__presets-label {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.board-form__preset {
+  font-size: var(--font-size-sm);
+}
+
+/* A statement about what will happen, not an error: the board is still legal
+   to save unless the hole budget says otherwise, and that case disables Save
+   rather than relying on the colour to be read. */
+.board-form__warning {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
 }
 
 /* Appearance dialog — same platform-dialog approach as .custom and .help */

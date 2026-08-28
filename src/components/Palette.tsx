@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ACCESSORIES, BY_KEY, isPlaceable } from '../data/catalog'
+import { ACCESSORIES, isPlaceable } from '../data/catalog'
 import { countBreakdown } from '../lib/counts'
 import { MAX_CUSTOM_PARTS, type CustomPart } from '../data/customParts'
+import { catalogWith } from '../data/customBoards'
 import { PITCH_MM } from '../lib/grid'
 import { useConfig } from '../state/store'
 import { useDrag } from '../state/drag'
@@ -41,6 +42,13 @@ export function Palette({
   const setExtra = useConfig((s) => s.setExtra)
   const boards = useConfig((s) => s.boards)
   const customParts = useConfig((s) => s.customParts)
+  const customBoards = useConfig((s) => s.customBoards)
+  // Counting has to resolve a user-defined board, or a wall built on one would
+  // disagree with the cost table about what is on it.
+  const byKey = useMemo(
+    () => catalogWith(customParts, customBoards),
+    [customParts, customBoards],
+  )
   const startFromPalette = useDrag((s) => s.startFromPalette)
   const draggingKey = useDrag((s) => s.itemKey)
   const selectedId = useConfig((s) => s.selectedId)
@@ -76,8 +84,8 @@ export function Palette({
   // cannot just read `extras`: the wall already needs some, so a stepper over
   // the raw adjustment would disagree with the line the user pays for.
   const { base, final } = useMemo(
-    () => countBreakdown(boards, placements, extras, BY_KEY),
-    [boards, placements, extras],
+    () => countBreakdown(boards, placements, extras, byKey),
+    [boards, placements, extras, byKey],
   )
 
   function setCount(key: string, target: number) {

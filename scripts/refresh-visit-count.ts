@@ -87,10 +87,8 @@ function credential(name: 'user' | 'token', raw: string | undefined): string {
   return value
 }
 
-// const user = credential('user', process.env.COUNTER_DEV_USER)
-// const token = credential('token', process.env.COUNTER_DEV_TOKEN)
-const user = credential('user', "mofane.work")
-const token = credential('token', "pxof-Zlpzk8%3D")
+const user = credential('user', process.env.COUNTER_DEV_USER)
+const token = credential('token', process.env.COUNTER_DEV_TOKEN)
 if (!user || !token) {
   console.error('COUNTER_DEV_USER and COUNTER_DEV_TOKEN must both be set')
   process.exit(1)

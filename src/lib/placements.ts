@@ -13,7 +13,7 @@
 
 import { BY_KEY, isPlaceable, type AccessoryItem, type CatalogItem } from '../data/catalog'
 import type { Placement } from '../state/store'
-import { rotatePattern, type Hole, type PegPattern, type Rotation } from './grid'
+import { pegHoles, rotatePattern, type Hole, type PegPattern, type Rotation } from './grid'
 import type { WallBoard } from './wall'
 
 export interface ResolvedPlacement {
@@ -69,6 +69,16 @@ export function unresolvablePlacementIds(
   wall: readonly WallBoard[],
   byKey: ReadonlyMap<string, CatalogItem> = BY_KEY,
 ): string[] {
-  const kept = new Set(resolvePlacements(placements, wall, byKey).map((r) => r.placement.id))
+  const kept = new Set(
+    resolvePlacements(placements, wall, byKey)
+      // Every peg must still land in a real hole — the same invariant
+      // `evaluatePlacement` enforces at drop time. `resolvePlacements` checks
+      // only the anchor because it runs per frame; this runs in an effect, so
+      // it can afford the full check. Editing a custom part's peg layout or
+      // its pitch is what makes this reachable: the anchor survives while a
+      // secondary peg is left hanging off the edge (findings F40).
+      .filter((r) => pegHoles(r.hole, r.pattern, r.board.byId) !== null)
+      .map((r) => r.placement.id),
+  )
   return placements.filter((p) => !kept.has(p.id)).map((p) => p.id)
 }

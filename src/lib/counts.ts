@@ -15,6 +15,7 @@ import type { CatalogItem } from '../data/catalog'
 import { isCustomKey } from '../data/customParts'
 import { foldKits } from './pricing'
 import { resolvePlacements } from './placements'
+import { isCustomBoardKey } from '../data/customBoards'
 import { buildWall, connectorsNeeded, layoutBoards } from './wall'
 import type { Placement, PlacedBoard } from '../state/store'
 
@@ -43,6 +44,9 @@ export function countBreakdown(
 ): CountBreakdown {
   const wallCounts = new Map<string, number>()
   for (const board of boards) {
+    // A user-defined board is a visualisation aid, exactly as a custom part is:
+    // no article number, so nothing to buy and nothing to count.
+    if (isCustomBoardKey(board.boardKey)) continue
     wallCounts.set(board.boardKey, (wallCounts.get(board.boardKey) ?? 0) + 1)
   }
 
@@ -55,7 +59,7 @@ export function countBreakdown(
 
   // Count what the scene actually renders, via the same resolver, so an item
   // can never be charged for while being invisible on the wall.
-  const wall = buildWall(layoutBoards(boards))
+  const wall = buildWall(layoutBoards(boards, byKey), byKey)
   for (const { item } of resolvePlacements(placements, wall, byKey)) {
     if (isCustomKey(item.key)) continue
     wallCounts.set(item.key, (wallCounts.get(item.key) ?? 0) + 1)

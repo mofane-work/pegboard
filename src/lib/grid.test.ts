@@ -3,15 +3,18 @@ import {
   MARGIN_MM,
   PITCH_MM,
   type BoardSpec,
+  type HoleGrid,
   type PegPattern,
   anchorPointForCentre,
   evaluatePlacement,
   generateHoles,
+  holeCount,
   holeId,
   indexHoles,
   nearestHole,
   rectsOverlap,
   rotatePattern,
+  snapPlacement,
   toBoardLocal,
 } from './grid'
 
@@ -341,5 +344,109 @@ describe('board orientation', () => {
     expect(Math.min(...ys)).toBeCloseTo(MARGIN_MM)
     expect(board.widthMm - Math.max(...xs)).toBeCloseTo(MARGIN_MM)
     expect(board.heightMm - Math.max(...ys)).toBeCloseTo(MARGIN_MM)
+  })
+})
+
+describe('arbitrary hole grids', () => {
+  const IMPERIAL: HoleGrid = {
+    pitchMm: 25.4,
+    arrangement: 'aligned',
+    shape: 'round',
+    holeWidthMm: 6.35,
+    holeHeightMm: 6.35,
+    thicknessMm: 6.35,
+  }
+
+  it('reproduces the measured SKÅDIS counts through the generic generator', () => {
+    // The numbers CLAUDE.md records off the photograph. If the grid descriptor
+    // ever stops being a faithful restatement of F8, these are what say so.
+    expect(holeCount(BOARD_36)).toBe(229)
+    expect(holeCount(BOARD_56)).toBe(364)
+    expect(holeCount(BOARD_76)).toBe(499)
+  })
+
+  it('counts without building, and agrees with what it would have built', () => {
+    for (const board of [BOARD_36, BOARD_56, BOARD_76]) {
+      expect(holeCount(board)).toBe(generateHoles(board).length)
+    }
+  })
+
+  it('puts an aligned grid on a single lattice', () => {
+    const board: BoardSpec = { widthMm: 25.4 * 10, heightMm: 25.4 * 8, grid: IMPERIAL }
+    const holes = generateHoles(board)
+
+    expect(holes.every((h) => h.lattice === 'A')).toBe(true)
+    expect(holes).toHaveLength(80)
+    expect(holeCount(board)).toBe(80)
+  })
+
+  it('keeps an aligned grid half a pitch off every edge', () => {
+    const board: BoardSpec = { widthMm: 25.4 * 10, heightMm: 25.4 * 8, grid: IMPERIAL }
+    const holes = generateHoles(board)
+    const xs = holes.map((h) => h.x)
+    const ys = holes.map((h) => h.y)
+
+    expect(Math.min(...xs)).toBeCloseTo(12.7)
+    expect(Math.min(...ys)).toBeCloseTo(12.7)
+    expect(board.widthMm - Math.max(...xs)).toBeCloseTo(12.7)
+    expect(board.heightMm - Math.max(...ys)).toBeCloseTo(12.7)
+  })
+
+  it('leaves an aligned field where it was when the panel is turned', () => {
+    const upright: BoardSpec = { widthMm: 254, heightMm: 254, grid: IMPERIAL }
+    const turned: BoardSpec = { ...upright, rotated: true }
+    const key = (b: BoardSpec) => generateHoles(b).map((h) => `${h.x},${h.y}`).sort()
+
+    expect(key(turned)).toEqual(key(upright))
+  })
+
+  it('scales the lattice with the pitch', () => {
+    const board: BoardSpec = {
+      widthMm: 500,
+      heightMm: 500,
+      grid: { ...IMPERIAL, pitchMm: 50, arrangement: 'staggered' },
+    }
+    const holes = generateHoles(board)
+    const a = holes.filter((h) => h.lattice === 'A')
+    const b = holes.filter((h) => h.lattice === 'B')
+
+    // A at (25, 50), B at (50, 25) — the SKÅDIS relationship at a 50 mm pitch.
+    expect(a[0].x).toBeCloseTo(25)
+    expect(a[0].y).toBeCloseTo(50)
+    expect(b[0].x).toBeCloseTo(50)
+    expect(b[0].y).toBeCloseTo(25)
+    expect(holes).toHaveLength(2 * 10 * 10 - 10 - 10)
+  })
+
+  it('places a lattice-locked accessory on an aligned board', () => {
+    // A custom part can be pinned to lattice B. An aligned board has no B
+    // holes, so enforcing parity there would make it unplaceable on every
+    // square-grid board — and there is no parity to enforce on one lattice.
+    const board: BoardSpec = { widthMm: 254, heightMm: 254, grid: IMPERIAL }
+    const holes = generateHoles(board)
+    const byId = indexHoles(holes)
+    const part: PegPattern = {
+      lattice: 'B',
+      offsets: [[1, 0]],
+      bodyOffset: [-12.7, -40],
+      bodySize: [50.8, 40],
+    }
+
+    const placed = snapPlacement(board, holes, part, 127, 127, byId)
+    expect(placed?.ok).toBe(true)
+  })
+
+  it('still refuses to bridge the two lattices on a staggered board', () => {
+    const holes = generateHoles(BOARD_56)
+    const byId = indexHoles(holes)
+    const part: PegPattern = {
+      lattice: 'B',
+      offsets: [[1, 0]],
+      bodyOffset: [-20, -40],
+      bodySize: [80, 40],
+    }
+
+    const placed = snapPlacement(BOARD_56, holes, part, 280, 280, byId)
+    expect(placed?.anchor.lattice).toBe('B')
   })
 })
