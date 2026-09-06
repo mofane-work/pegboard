@@ -31,6 +31,10 @@
  * this is the only thing you track. The script always logs the site keys it
  * found, so the first run tells you what to set.
  *
+ * A key is an origin, so it is a HOST and never a path: a Pages project site
+ * served from `<user>.github.io/<repo>/` is counted under `<user>.github.io`.
+ * `resolveSite` reduces a pasted address to its host rather than rejecting it.
+ *
  * Run by hand:  COUNTER_DEV_USER=… COUNTER_DEV_TOKEN=… npm run refresh-visit-count
  */
 
@@ -188,6 +192,33 @@ async function fetchDump(): Promise<CounterDump | null> {
   }
 }
 
+/**
+ * Matches what the user asked for against the site keys the account actually
+ * has. Exact first, then the origin of what they gave us.
+ *
+ * A site key is an **origin** — `Origin2SiteId` in counter.dev's `track.go`
+ * buckets by the Origin header, which carries a scheme and a host and never a
+ * path. That is exactly the shape a GitHub Pages *project* site defies in the
+ * one place a maintainer would look for its address: the site is served from
+ * `<user>.github.io/<repo>/`, so that is what gets pasted into the variable,
+ * and it can never be a key. The count for a project page lives in its user
+ * site's bucket, shared with everything else on that domain (F27f).
+ *
+ * So a value carrying a scheme, a path, a port or a trailing slash is not a
+ * typo to reject — it is the address of the thing being counted, written the
+ * way its owner knows it. Reduce it to its host and try again.
+ */
+function resolveSite(asked: string, keys: string[]): string {
+  if (keys.includes(asked)) return asked
+  const host = asked
+    .replace(/^[a-z][a-z0-9+.-]*:\/\//i, '') // scheme
+    .replace(/^[^/@]*@/, '') // userinfo, if a full URL was pasted
+    .split(/[/?#]/)[0] // path, query, fragment
+    .replace(/:\d+$/, '') // port
+    .toLowerCase()
+  return keys.find((key) => key.toLowerCase() === host) ?? ''
+}
+
 const dump = await fetchDump()
 if (!dump) {
   console.log('leaving the committed count as it is')
@@ -198,12 +229,19 @@ const sites = dump.sites ?? {}
 const siteKeys = Object.keys(sites)
 console.log(`counter.dev sites on this account: ${siteKeys.join(', ') || '(none yet)'}`)
 
-const wanted = process.env.COUNTER_DEV_SITE
-if (wanted && !(wanted in sites)) {
+const asked = (process.env.COUNTER_DEV_SITE ?? '').trim()
+const wanted = asked ? resolveSite(asked, siteKeys) : ''
+if (asked && !wanted) {
   // Naming a site that does not exist would otherwise commit a confident 0 and,
   // on a fresh badge, look exactly like "nobody has visited yet".
-  console.error(`COUNTER_DEV_SITE="${wanted}" is not one of: ${siteKeys.join(', ') || '(none)'}`)
+  console.error(`COUNTER_DEV_SITE="${asked}" is not one of: ${siteKeys.join(', ') || '(none)'}`)
+  console.error('  A site key is an ORIGIN — a host, with no scheme and no path.')
+  console.error('  A project page lives under its user site, so a Pages project')
+  console.error('  reports as "<user>.github.io", not "<user>.github.io/<repo>/".')
   process.exit(0)
+}
+if (wanted && wanted !== asked) {
+  console.log(`COUNTER_DEV_SITE="${asked}" resolved to the site key "${wanted}"`)
 }
 
 const counted = wanted ? [sites[wanted]] : Object.values(sites)

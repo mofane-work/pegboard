@@ -2,7 +2,7 @@
 
 # Pegboard
 
-Plan an IKEA SKÅDIS pegboard wall in 3D, drop accessories onto the real peg holes, and price only the partss you still need to buy. Fully static. No backend, no API key, no build-time secrets.
+Plan an IKEA SKÅDIS pegboard wall in 3D, drop accessories onto the real peg holes, and price only the parts you still need to buy. Fully static. No backend, no API key, no build-time secrets.
 
 [![CI](https://github.com/mofane-work/pegboard/actions/workflows/ci.yml/badge.svg)](https://github.com/mofane-work/pegboard/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
@@ -39,7 +39,7 @@ No install, no sign-up, a static page.
 
 ## Why this exists
 
-> I was standing in an IKEA store trying to mentally arrange pegboard accessories when I realized a 3D planner would make the process much easier. This is why I build this so you don't have to.
+> I was standing in an IKEA store trying to mentally arrange pegboard accessories when I realized a 3D planner would make the process much easier. This is why I built this so you don't have to.
 
 Planning a pegboard wall in the store, or in your head, goes badly in three specific ways:
 
@@ -81,8 +81,7 @@ This project was built to solve a design problem for Pegboards and offered some 
   into the bundle and kept current by a weekly GitHub Action. Press **Refresh prices** if
   you want today's number instead, and that is the only thing here that ever contacts IKEA.
 - **Per-line checkboxes** so you can price only the upgrade.
-- **Per-line price overrides**, persisted that covers second-hand parts, sale prices, and any
-  market with no live source.
+- **Per-line price overrides** persisted that covers second-hand parts, sale prices, or any market with no live source.
 - **Pack-quantity aware**: `ceil(qty / packQty) × packPrice`, and the table shows both
   numbers when they differ ("6 hooks → 3 × 2-pack").
 - Graceful degradation: override → live → cache → bundled snapshot → "—". An unknown

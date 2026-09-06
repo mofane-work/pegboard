@@ -22,7 +22,13 @@
 #     Variable COUNTER_DEV_ID     — the site token the tracker script uses
 #                                   (read by deploy-pages.yml, not by this file)
 #     Variable COUNTER_DEV_SITE   — optional; one site key to count instead of
-#                                   summing every site on the account
+#                                   summing every site on the account. A key is
+#                                   an ORIGIN, so a host with no scheme and no
+#                                   path: a Pages project at
+#                                   <user>.github.io/<repo>/ is counted under
+#                                   <user>.github.io. The script reduces a
+#                                   pasted URL to its host, and logs the keys
+#                                   the account actually has either way
 # Until COUNTER_DEV_USER/TOKEN exist the scheduled run fails fast and loudly on
 # the missing-credentials check, which is the intended signal, not a bug.
 
@@ -31,9 +37,11 @@ name: Refresh visit count
 on:
   workflow_dispatch: {}
   schedule:
-    # Daily, 04:00 UTC — an hour before the Monday price refresh, so the two
-    # never race for the same push.
-    - cron: '0 4 * * *'
+    # Weekly, Monday 04:00 UTC — an hour before the Monday price refresh, so
+    # the two never race for the same push. A visit total is cumulative and the
+    # badge is not time-sensitive, so a week's granularity costs nothing and a
+    # daily commit to the default branch for a number nobody reads is noise.
+    - cron: '0 4 * * 1'
 
 # Serialise: two runs rewriting the same file would conflict on push.
 concurrency:
@@ -56,7 +64,7 @@ jobs:
           node-version: 24
 
       # The script has no imports outside node: builtins, so there is nothing
-      # to install. Skipping npm here keeps a daily job to a few seconds.
+      # to install. Skipping npm here keeps the job to a few seconds.
       - name: Refresh the visit count
         env:
           COUNTER_DEV_USER: ${{ secrets.COUNTER_DEV_USER }}

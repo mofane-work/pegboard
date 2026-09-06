@@ -640,6 +640,11 @@ corner radius is derived from dims so `buildAccessoryParts(item)` keeps its one-
 
 ## F24 — Rotating a board regroups the lattices; it does not move a slot
 
+> **Scope corrected by F42 (2026-08-28).** The maths below is unchanged and still governs
+> every turned board. It no longer applies to any SKÅDIS panel: those are not rotatable at
+> all, because a horizontal slot holds no accessory. Read this as being about user-defined
+> pegboards.
+
 A board hung the other way round (36×56 → 56×36) is modelled by swapping `widthMm` and
 `heightMm` **and exchanging the two lattice origins**. Worked through explicitly, and the
 first version of this note got the reason wrong — the tests corrected it.
@@ -864,9 +869,9 @@ the body, takes the first `dump` frame, and aborts. The count is committed to
 It carries the **same no-shrink guard as `mergeSnapshot`** (F25c), for the same reason: an
 unattended robot committing a throttled or partial response would otherwise make a public
 badge count backwards. Visits are cumulative; a smaller number is bad data, not fewer
-visitors. `deploy-pages.yml` now ignores `.github/badges/**`, so the daily badge commit does
+visitors. `deploy-pages.yml` now ignores `.github/badges/**`, so the badge commit does
 not trigger a Pages redeploy — without that, a number that never reaches the bundle would
-rebuild and redeploy the whole site every morning.
+rebuild and redeploy the whole site on every refresh.
 
 **Not researched, deliberately:** whether counter.dev offers an Art 28 DPA. Its repo
 documents none, and no hosting country is stated. For a free, non-commercial tool the
@@ -1402,3 +1407,676 @@ test asserting the members have no numbers and point at a real, purchasable pack
 palette gained three rows, which pushed the 12-iteration custom-part cap test past the
 default 5 s vitest budget; its timeout is now stated explicitly rather than left to be
 tripped by the next catalog addition.
+
+## F37 — Five features, and the four places the obvious version would have been wrong (2026-08-26)
+
+Phase 35: a selection colour, total pack counts, editable counts, board names, and
+user-chosen scene colours. Requirements settled with the user before any code; what is
+recorded here is the reasoning that is not visible in the diff.
+
+### F37a — A selection you cannot see is not a selection
+
+`AccessoryMesh` marked the selected item with `emissive={color}, emissiveIntensity={0.35}`
+— a glow in the accessory's *own* orange, on a board that is already light. Against
+`--board-color: #d8d3c4` it is close to invisible. Fixed by **repainting the body** in a new
+`--selected-color` (`#1f7fbf` light, `#5ec8f5` dark), keeping the glow at the same hue so
+the shape still reads in a dark scene. The `'#000000'` literal that used to mean "not
+selected" is gone; `emissiveIntensity: 0` says that already.
+
+The palette had no picked state at all beyond `:active`. A row is now highlighted when it is
+either the drag source or the item of the current selection — the two are the same question,
+"which component am I working with", so they share one colour. This is the second half of
+the user's request: the pane and the scene should agree.
+
+### F37b — The theme has to be the reset, or an override outlives its palette
+
+Four colours are user-settable: `--scene-bg`, `--board-color`, `--accessory-color`,
+`--selected-color`. Deliberately **not** `--snap-ok` / `--snap-bad`: those two mean "this
+drop is legal" and "this one is not". They are meaning, not decoration, and letting someone
+paint both of them the same colour breaks the only feedback a drag has.
+
+The user's own rule, and it is the right one: **changing the theme clears the overrides.**
+Without it, a colour picked against the light palette survives into dark, and the visitor who
+switched to dark *because* of a contrast problem finds their own colours still sitting on top
+of it. `setTheme` clears `colors`.
+
+Three implementation traps, all real:
+
+1. **`useThemeTokens` watched only `data-theme`.** Overrides are written as inline custom
+   properties on `<html>`, which is a mutation of `style`, not `data-theme` — so the DOM
+   recoloured and the 3D scene kept the old palette. The `attributeFilter` is now
+   `['data-theme', 'style']`. This is exactly why the token bridge exists: three.js cannot
+   read CSS, so anything that changes a token has to be something the observer sees.
+2. **A colour goes into a CSS custom property**, so it is validated as six-digit hex **in the
+   store**, not only in the picker. `migrate` is skipped when the stored version already
+   matches, so a hand-edited blob otherwise reaches the page unchecked — the same reasoning
+   `clampCustomPart` is built on.
+3. **`<input type="color">` needs a value always**, so the pickers are seeded from
+   `useThemeTokens()`, which reports the *effective* colour. An untouched picker therefore
+   shows the theme's own value and there is no "unset" state to render.
+
+### F37c — Editing a count is a delta, not a number
+
+The obvious version writes the typed number into `extras`. That is wrong the moment the user
+touches the board again: place one more hook and the count they set is now stale, because it
+was recorded as an absolute. The count is stored as the **difference from what the wall
+needs**, so moving, adding or deleting items on the board still moves the count with them.
+
+That requires a *base* to measure against, which the code did not have — the derivation lived
+inside a `useMemo` in `CostTable` and produced only the final number. Lifted into
+`lib/counts.ts` as `countBreakdown`, returning `base` and `final`, and now shared with the
+palette's steppers. That sharing is not tidiness: `connector-board` is a cost-only item whose
+base is *not* zero, so a stepper reading raw `extras` and a table reading `base + extras`
+would have shown two different numbers for the same line.
+
+One ordering change fell out of it. `extras` used to be summed into the counts *before*
+`foldKits`; it is now folded separately and added. Same answer for anything the UI can
+produce — the only extras key that is a kit is the pack's own, which the fold adds onto — but
+it leaves `base` a well-defined number rather than one contaminated by the adjustment being
+measured against it.
+
+**A negative is a feature, decided by the user**: "I already own two" lowers the cost and
+leaves the wall alone. Cost and board are allowed to disagree, and that is the include/exclude
+checkbox's own premise taken one step finer. Consequences that had to be handled rather than
+discovered later:
+
+- `final` floors at **zero**, not at the base. A crafted link or a hand-edited blob is the
+  only way a large negative arrives, and a negative quantity must never enter the cost model.
+- A line whose count reaches zero **stays rendered**. `packsNeeded` already returns 0 and
+  `totalCost` already skips it, so it costs nothing — but remove the row and the user has
+  destroyed the only control that could bring it back.
+- `decodePairs` in `shareLink.ts` rejected every negative. It now takes `allowNegative`, on
+  for `extras` and **off for `overrides`** — a negative *price* is still nonsense. No version
+  bump: a v2/v3 link cannot contain a negative, so nothing already in the wild changes
+  meaning. The honest cost is that a browser holding a **cached older build** rejects a new
+  link carrying one, whole, and silently keeps its own configuration. That is the codec's
+  existing all-or-nothing failure mode, accepted rather than worked around.
+- `applyShared` wrote `config.extras` in untouched. It clamps now, like everything else that
+  arrives from outside.
+
+### F37d — Total packs, not total pieces
+
+The user was explicit about why: they are walking into an IKEA, and what they need to know is
+how many things they carry to the till. Pieces would be actively misleading for the multipack
+SKUs — six hooks is three boxes.
+
+`CostTotal` gained `packs`, summed over the same lines the money covers **plus the ones whose
+price could not be resolved**. How many things you are buying is knowable even when what they
+cost is not; the unknown-price note already covers the money side separately.
+
+In the text export the sum goes in the **pack column of the existing total row**, lined up
+under the per-row counts, rather than as a new labelled line — the column already means "how
+many", and it needed no new string in three languages. The print sheet renders the same
+string, so it inherited the total for free.
+
+### F37e — Board names are local, and the `<label>` had to go
+
+The user chose **not** to share names, which is the same policy custom parts already have and
+which leaves the `v3` link grammar untouched — no third board field, no escaping of `~ ! *`
+in free text, and the exact-string board-field assertion in `shareLink.test.ts` still stands.
+Opening a link therefore clears your names, consistent with "a link is a starting point, not a
+step you can undo past."
+
+Two things that are not obvious from the requirement:
+
+- The caption was a `<label>` wrapping the board `<select>`. Making the caption a rename
+  button inside that label would have forwarded every click on it to the select. It is a
+  `<div>` now, with the select carrying an `aria-label` of the board's display name — which
+  also keeps `getByLabelText('Board')` working in the existing tests.
+- Undo came free. `EditSnapshot` already carries `boards`, so a `renameBoard` that goes
+  through `remember(state)` is undoable with no other change.
+
+Names are clamped in the store (trim, strip control characters, cap at 24, empty →
+`undefined` so "unnamed" has exactly one representation), and the v11 migration re-clamps
+stored names rather than trusting them.
+
+### F37f — Two corrections from first use of Phase 35 (2026-08-26)
+
+**The editable cells were misaligned, and the cause was not padding.** `.cost__reset` and
+`.cost__badge` were `display: block` inside a `.cost__num` cell, whose `text-align: end`
+right-aligns the *number*. `text-align` cannot move a shrink-to-fit block box, so the reset
+button sat under the cell's left edge while the number sat at its right — and "Use board
+count" is long enough, in a numeric column, to widen the column while it did so. The badge
+had a second problem: as a block child of the number button it broke that button's own box.
+
+Fixed by aligning the boxes rather than their text: a `.cost__cell` flex column with
+`align-items: flex-end`, with the badge lifted out of the button to become a sibling. The
+badge carries the same inline padding *and a transparent 1px border* as the buttons it sits
+between, or it is exactly one border short of their right edge. Applied to the price cell as
+well as the quantity cell — identical markup, identical latent flaw, and leaving one alone
+would have made two adjacent columns disagree.
+
+**Live colour preview was unaffordable, and the reason is a React detail.** React maps
+`onChange` on `<input type="color">` to the native **`input`** event, not `change` — so it
+fires continuously while the pointer moves through the OS picker. Each one wrote to the
+store, which wrote an inline custom property, which tripped the MutationObserver, which
+re-read every token and re-rendered every material in the scene: dozens of full scene
+rebuilds per drag.
+
+The dialog now holds a draft and commits once, on Save. `setColor` and `resetColors` were
+replaced by a single `setColors(next)` that validates and replaces the whole map — one write,
+one repaint. Cancel discards; Reset clears the swatches but still waits for Save, so there is
+one rule to remember rather than two.
+
+Two supporting changes:
+
+- `useThemeTokens` now **compares before it re-renders**. `readTokens` builds a fresh object
+  every call, so with `style` in the `attributeFilter` any inline style written on the root —
+  this app's or an extension's — was rebuilding the scene. This is what makes watching `style`
+  affordable rather than merely correct.
+- `readThemeDefaults()` reads the theme's own values by lifting the inline overrides off and
+  putting them straight back. Both writes land in one task so nothing paints in between, and
+  the equality check above means the pair costs a style read rather than a scene rebuild.
+  Without it a Reset would "go back" to the override it was clearing.
+
+### F37g — The dark palette, measured (2026-08-26)
+
+Reported as "crazily difficult to see" in dark mode. Two separate problems, and the one that
+mattered was not the one that looks wrong in a colour picker.
+
+**The selected colour was bright and still useless.** `--selected-color: #5ec8f5` sat at
+5.73:1 against the dark board — plenty legible on its own. Against `--accessory-color`
+(`#f5a623`) it sat at **1.07:1**. The two are almost exactly the same luminance, so a selected
+hook and its unselected neighbours read as one tone in two hues, which under 3D lighting is
+close to no difference at all. Legibility against the background was never the question; the
+question is whether the selected item stands out from the *other items*, and nothing was
+measuring that.
+
+**The board barely separated from the void behind it**, at 1.74:1.
+
+Measured, and chosen against each other rather than one at a time:
+
+| relationship | was | now |
+|---|---|---|
+| board vs pane background | 1.74 | **2.61** |
+| selected vs accessory (the real defect) | 1.07 | **1.68** |
+| selected vs board | 5.73 | 6.22 |
+| accessory vs board | 4.63 | 3.69 |
+
+`--scene-bg: #0b0c0f`, `--board-color: #50555f`, `--selected-color: #c7f1ff`. The board is the
+trade: every step that lifts it off the background pushes the orange accessories closer to it,
+so `#50555f` is the point where board/background clears 2.5 while accessory/board still clears
+3. Going to `#5c626d` would buy 3.19 on the first and cost 3.03 on the second.
+
+Light mode's `--selected-color` moved `#1f7fbf → #1a6ea6` at the same time. Not part of the
+report: at `#1f7fbf` the picked palette row's *text* was 4.33:1 on white, just under AA, which
+was a defect introduced with the row highlight in Phase 35. Now 5.49:1, and 3.67:1 against the
+board instead of 2.90:1.
+
+**Left in place, deliberately, and worth knowing:** light mode's accessory-on-board contrast is
+about **1.35:1** — far worse than anything in dark mode, carried entirely by hue, shading and
+the cast shadow rather than by luminance. Nobody has reported it. `styles/tokens.test.ts`
+therefore asserts that floor for dark only, with the reason written next to it, so nobody
+"fixes" a failure by lowering the dark threshold to match light.
+
+`styles/tokens.test.ts` is new and pins these relationships as floors, plus the one that is
+pure clerical risk: the two dark blocks are written out by hand, so the OS-preference palette
+and the explicit-toggle palette are asserted to agree token for token.
+
+### F37h — Right-aligning a numeric column that has no right edge
+
+The first alignment fix aligned the boxes instead of their text and was still wrong, because
+the premise was. `.cost__num` was `text-align: end`, but every `th` in the table is
+start-aligned — so the numbers had been sitting under nothing all along, and the Qty and Price
+cells then stacked buttons of differing widths under them. Right-aligning is only worth doing
+when the column has a shared right edge to align to; this one has a heading on the left and
+ragged content on the right.
+
+Now the whole numeric side starts where its heading starts, and `font-variant-numeric:
+tabular-nums` does the job that mattered — keeping the digits themselves in line.
+
+### F37i — Aligning text, not boxes, and why the third attempt is the last one (2026-08-26)
+
+Third report on the same cell. Attempt one aligned the boxes to the right; attempt two aligned
+them to the left. Both were reasoned rather than seen — there is no browser in this
+environment — and both left the reset button not quite in line with its badge.
+
+What the first two shared was the wrong unit of alignment. `align-items: flex-start` puts every
+flex item's **box** at x=0, but a reader lines up **text**, and a box insets its text by its own
+border plus its own padding. The value button and the reset button carried
+`padding: 2px var(--space-1)` and a 1px transparent border from one rule; the badge carried
+`padding-inline: var(--space-1)` and a 1px transparent border from a *different* rule. They
+computed to the same 5px, which is why the diff looked right — but "two rules that happen to
+agree" is not alignment, it is a coincidence with a maintenance cost, and one `<span>` versus
+two `<button>`s is exactly where a UA stylesheet gets to disagree with the arithmetic.
+
+Two real differences did turn up while chasing it:
+
+- **A `<button>` centres its own text by UA rule**, and no amount of `text-align` on an ancestor
+  reaches it — inheritance loses to a rule that matches the element. Harmless while the button
+  is shrink-to-fit, and not harmless the moment anything stretches it.
+- jsdom cannot settle this: it resolves the cascade but leaves any shorthand containing `var()`
+  empty, so a computed-style test compares blanks. Worth knowing before writing one.
+
+The fix is to remove the quantity being compared. All four now carry `padding: 0` and
+`border: 0`, so every text starts at x=0 — the value, the badge, the reset, and the column
+heading above them — whatever element each happens to be, with nothing left to keep in step.
+Hover moved to an `outline` with `outline-offset`, because an outline takes no part in layout
+and therefore buys the affordance back without reintroducing the padding that caused this.
+
+**Column gutters.** Once every column is start-aligned, the gap a reader sees between two
+columns is the left one's *trailing* padding plus the right one's *leading* padding. At
+`var(--space-1)` each that was 8px, and "Buy" ran straight into the price. Now
+`padding-inline: var(--space-1) var(--space-3)` — a 16px gutter for 48px of extra table width,
+with the last column's trailing gutter removed since nothing follows it. `--space-4` reads
+better still and starts the horizontal scroll sooner in a 240px pane.
+
+## F38 — Why the visit badge's share credentials came back `nouser` (2026-08-26)
+
+The badge script reported `counter.dev rejected the credentials (type: nouser)` while the
+share URL "worked" when pasted into a browser. Both halves of that are explained by
+counter.dev's own source; neither is a bug in `refresh-visit-count.ts`, which was verified
+end-to-end against counter.dev's public demo account (`?demo=1`, one site, 174,457 visits) —
+the SSE framing, the first-`dump` abort, the site sum and the badge write are all correct.
+
+**F38a — pasting the share link in a logged-in browser tests nothing.** `dump.go` resolves
+the viewer in a strict order: `?demo=`, then `GetSessionlessUserId()` (the `?user=&token=`
+pair), then `GetUserId()` (the `swa` session cookie), and only if all three come up empty
+does it emit `nouser`. So an invalid token in a browser holding a dashboard session falls
+through to the cookie and renders the dashboard anyway. The tell is `meta.sessionless`:
+`share-account.js` renders "You are viewing *X*'s dashboard as guest" with an **Exit** link
+for a real guest, versus the normal "This account has guest access / Copy url / Remove" row
+for a session. **Test a share link in a private window, or you are testing your cookie.**
+
+**F38b — the token's base64 padding is percent-encoded in the URL you copy.**
+`ResetToken` stores `randToken()[:8]`, and `ReadToken` returns
+`base64.URLEncoding.EncodeToString` of it — 8 bytes, so 12 characters ending in exactly one
+`=` pad. `share-account.js` then builds the link with `encodeURIComponent`, which renders
+that pad as **`%3D`**. Copy the token out of the URL text literally and the secret holds
+`…%3D`; the script's `URLSearchParams` encodes it *again* to `%253D`, Go's `FormValue`
+decodes once back to `…%3D`, and `VerifyToken`'s string comparison fails on the last
+character. base64url uses `-` and `_` rather than `+` and `/`, so `=` is the only character
+in a token this can happen to — and `%` is not a base64url character at all, which is what
+makes decoding safe to do unconditionally.
+
+The script now normalises what it is given: trims (a trailing newline survives a paste into
+a GitHub secret), accepts the whole share URL in either variable, and percent-decodes a
+value containing `%`. The `nouser` branch also prints the username it sent, the token's
+length and last three characters, and the two traps above — enough to tell which of them you
+are in without echoing a secret into a public Actions log.
+
+**Still the maintainer's to get right,** because no amount of normalising can see them:
+`COUNTER_DEV_USER` is the login username (redis `HGET tokens <id>` is an exact match — not
+the sign-up email, not the `data-id` UUID, not the site domain), guest access must have been
+switched on at least once, and clicking Share or Remove again issues a new token that
+invalidates whatever is in the secret.
+
+## F39 — What a pegboard is, when it is not a SKÅDIS (2026-08-27)
+
+Research for Phase 36. Every number below is cited; where a manufacturer does not publish one,
+that is said rather than guessed.
+
+### F39a — skraeddar independently confirms F8
+
+`skraeddar.torminal.com` is a parametric SKÅDIS-clone generator the user pointed at. The page is
+a JS SPA that does not render for a plain fetch, so the numbers come from the source:
+`github.com/thetorminal/skraeddar`, `src/App.tsx`.
+
+It exposes **four** controls — width (80–800 mm, step 40, default 280), height (same),
+thickness (2–8 mm, step 0.5, default 5), and a boolean for four corner mounting holes. Every
+piece of hole geometry is hardcoded:
+
+```
+HOLE_WIDTH = 5, HOLE_HEIGHT = 15
+HOLE_SPACING_X = 40, HOLE_SPACING_Y = 20
+EDGE_MARGIN = 20
+offsetX = (j % 2) * (HOLE_SPACING_X / 2)
+BOARD_RADIUS = 8
+```
+
+That is **our F8 lattice, written the other way up**: rows every 20 mm in y, alternate rows
+shifted 20 mm in x. Our A ∪ B is the same point set. This is the first independent confirmation
+of the F7→F8 correction we have had, and it arrived from someone who measured the same product
+without seeing our working.
+
+It is also the *floor* for a dialog, not a model to copy: a tool that commits to one target
+spec needs no hole parameters at all. We cannot commit, because the whole point is the boards
+IKEA does not make.
+
+### F39b — the systems, and what they actually specify
+
+| System | Pitch | Arrangement | Hole | Thickness | Confidence |
+|---|---|---|---|---|---|
+| SKÅDIS | 40 mm | staggered | 5 × 15 slot | 4.6 mm | measured, F8 |
+| US hardboard | 25.4 mm (1″) | **square** | ¼″ round *or* ³⁄₁₆″ | ⅛″–¼″ | pitch solid, hole size genuinely unstandardised |
+| Wall Control | 25.4 mm | square | ¼″ wide slot | — | pitch + width from their own how-to; **slot length and thickness unpublished** |
+| Multiboard | 25 mm | square | — | — | pitch confirmed; **hole diameters unpublished anywhere reachable** |
+| HSW | — | hex tiling | 13.4 mm hex connector | — | one connector dimension only; no reachable spec sheet |
+
+Sources: designingidea.com and wallwerx.com for hardboard; wallcontrol.com/pegboard-how-to;
+multiboard.io knowledge hub; a GitHub discussion for the HSW connector hex.
+
+Two conclusions followed directly:
+
+- **Multiboard is not shipped as a preset.** The 25 mm grid is real, but a preset needs a hole
+  size, and inventing one would put a number in the app with no source — the thing
+  `catalog.ts`'s own rule forbids. A user can still build it by hand in the dialog.
+- **Hex is not offered as a hole shape at all.** HSW is a genuine ecosystem, but its geometry is
+  documented by remix rather than by spec, and a hex grid is a different tiling from a
+  staggered rectangular one — not a shape swap. Guessing it would be F7 all over again.
+
+### F39c — the right level of abstraction, borrowed rather than invented
+
+Only two tools in the survey generalise hole geometry instead of hardcoding one spec:
+`ringerc/openscad-pegboard-peggrid` and a MakerWorld "Round/Hex/Skadis" generator. Both land on
+the same small parameter set — shape, size, pitch, margin, and an **aligned-vs-staggered
+boolean** (`hexpattern` in the OpenSCAD library). That two independent authors converged on it
+is the argument for adopting it; it is not our idea.
+
+### F39d — margin = pitch / 2 is a modelling choice, and it buys the cell
+
+The one thing we decided rather than found. Every system surveyed either auto-centres its
+lattice or uses one uniform margin, and SKÅDIS's is exactly half a pitch. Fixing the margin at
+half the pitch means:
+
+- the lattice lands symmetrically on all four edges with no centring arithmetic, and
+- board dimensions want to be whole multiples of the pitch — so the dialog sizes a board in
+  **cells**, which is the `CustomPart` cols/rows precedent arriving for free.
+
+The generic generator was checked against the documented truth before anything was built on it:
+staggered hole count is `2·cols·rows − cols − rows`, giving **499** for the 76×56 and **229**
+for the 36×56 — the numbers CLAUDE.md records off the photograph. `holeCount` computes it from
+the same origin/limit arithmetic `generateHoles` uses rather than from that closed form, because
+a formula that drifts from its generator is exactly what F7 was.
+
+### F39e — parity is vacuous on a square grid, and enforcing it anyway is a bug
+
+An aligned board has a single lattice. The A/B parity filter in `snapPlacement` exists to stop
+an accessory bridging the two SKÅDIS lattices; with one lattice there is nothing to bridge.
+Left in place it would make any **custom part pinned to lattice B** unplaceable on every
+square-grid board — a rule inherited from a different board's geometry, applied to a board that
+does not have it. Every catalog accessory is `lattice: 'either'` (`hanging()` is the sole
+producer), so this could only ever have bitten custom parts, which is the least likely place
+anyone would look.
+
+### F39f — dropping a board is not like dropping a hook
+
+Custom **parts** are filtered out of a share link and the dropped count is reported (F23). The
+same treatment for a board would take the panel *and everything hanging on it*, which is not a
+graceful degradation — so v4 links carry the geometry inline, as a `c*…` entry.
+
+What does **not** travel is the name. Free text the user typed stays local, consistently with
+`PlacedBoard.name` and with custom parts; the recipient's copy is named by its size. The
+receiving store reuses a definition that already describes the same board, so opening one link
+twice, or a wall using one board on two panels, yields one definition rather than two.
+
+### F39g — the hole budget is a triangulation cost, not a frame cost
+
+Every hole is a separate `Path` punched into one extruded `Shape`. The largest SKÅDIS board is
+499; a full 4×8 ft imperial sheet at 1″ pitch would be **~4600**. The cap is 1200 per board,
+about 2.5× the largest real panel, enforced in `clampCustomBoard` (which shrinks the longer side
+first) as well as in the dialog. Worth being honest about: **the number is argued, not
+measured.** There is no browser in this environment to profile in, and the cost is paid on
+resize rather than per frame, so the risk of it being wrong is a slow dialog, not a slow scene.
+
+## F40 — what a peg is, when the board is not SKÅDIS
+
+Phase 36 gave a board its own `HoleGrid` (pitch, arrangement, shape, hole size, thickness). A
+part got nothing equivalent: `customParts.ts` multiplied cells by the module constant
+`PITCH_MM`, so a custom part dropped on a 25.4 mm board had its pegs on the board's real holes —
+offsets are lattice *steps* — and a body drawn **1.57× too wide**. That is the gap this phase
+closes.
+
+### F40a — the parameters other people actually expose
+
+Rather than invent a vocabulary, surveyed the established generators (the same method as F39c).
+
+`franpoli/OpenSCADutil`, the most complete SKÅDIS accessory library, parameterises pegs as:
+
+| Parameter | Default | What it is |
+|---|---|---|
+| `peg_default_width` | 5 mm | peg cross-section width — **the slot's own width** |
+| `peg_default_thickness` | 4.6 mm | **the board's own thickness** |
+| `ptw` = `3*pw` | 15 mm | total peg width — **the slot's own height** |
+| `ptl` = `4*pw` | 20 mm | total peg length: through the panel, then hooking down |
+| `distance_between_pegs` | 40 mm | the pitch |
+| `all_pegs` | false | every peg position along the width, or the minimum |
+| `retainer` | false | a lip that grips the back of the panel |
+| `tolerance` | 0.6 mm | 3D-printing clearance |
+
+Imperial pegboard, for contrast: ¼″ (6.35 mm) hole on 1″ (25.4 mm) centres, prong ¼″ or ⅛″, and
+a documented **½″ (12.7 mm) minimum clearance behind the board** for the hook's tail.
+
+Two things fall out, and both shaped the model:
+
+1. **A peg's cross-section is the hole's cross-section, and its length is measured against the
+   board's thickness.** Neither is a free parameter in any generator surveyed — they are
+   *derived from the board*. That is why `PegSpec` is deliberately shaped as the mirror of
+   `HoleGrid` field for field, and why `pegFitWarnings` compares them pairwise.
+2. **The genuinely free choices are the spacing and how many pegs there are.** Everything else
+   is a consequence. `all_pegs` is the only layout switch anyone exposes; `PegLayout` generalises
+   it to four cases, adding `single` and the two-row `corners`, which is how a rigid box is
+   pinned rather than hung.
+
+`tolerance` and `retainer` were **refused**, on the F39b principle. Both are printing concerns;
+this app visualises a wall, it does not export a mesh to slice. Modelling a 0.6 mm print
+clearance here would be a number with no consumer.
+
+### F40b — the mismatch is drawn, not corrected
+
+A part's pitch sizes its *body*; the board's pitch decides where its *pegs land*. When they
+disagree, three behaviours were possible: draw at the part's pitch, rescale to the board's, or
+refuse the placement.
+
+Rescaling was rejected as the expensive wrong answer. It requires board context inside
+`AccessoryItem.dims`, `buildAccessoryParts`, the print sheet and every collision rect — and it
+would make the same part a different size on each panel of a mixed wall, silently. Refusing was
+rejected for the F39 reason: this app has never blocked a user from drawing something it
+believes cannot be built, it says so instead.
+
+So a mismatched part is drawn visibly wrong, and the dialog explains why. That is consistent
+with the off-pitch board warning, which says a SKÅDIS hook will not hang on a 25.4 mm panel and
+then lets you build it anyway.
+
+### F40c — pegs are the one thing drawn behind the board face
+
+Every accessory builder had worked at z ≥ 0; `customParts.test.ts` asserted `box.min.z >= -1`
+outright. A peg is the exception, and it has to be: the whole value of a peg *length* is seeing
+that it does not reach through a 6.35 mm sheet, or that it protrudes out the back.
+
+The builder reads its peg positions off the item's own `PegPattern` rather than recomputing
+them, which is what keeps `buildAccessoryParts(item)` a one-argument function and makes the
+two-row `corners` layout work without the builder knowing what a layout is. `AccessoryItem.pegs`
+is optional and **undefined for every SKÅDIS item** — IKEA publishes no peg dimensions, so a
+catalog default would be a guess rendered as though it were measured (the F35 mistake).
+
+The bounds test now separates the two claims it had conflated: the *body* still hangs from y=0
+at z ≥ 0, and the *pegs* are the only geometry behind the face.
+
+### F40d — an editable peg layout can strand a placement
+
+`resolvePlacements` checks only that the **anchor** hole exists, because it runs per frame;
+`evaluatePlacement` checks every peg, but only at drop time. Nothing re-checked the pegs of an
+already-placed item. Editing a part's layout from `ends` to `every`, or its `rows` under a
+`corners` layout, adds pegs to an item that is already on the wall — the anchor survives and a
+new peg hangs off the edge.
+
+Fixed in `unresolvablePlacementIds`, not in `resolvePlacements`: the prune runs in an effect, so
+it can afford the full `pegHoles` check that the render path cannot. Same invariant, enforced in
+the place that already exists to enforce invariants against a stale saved wall.
+
+### F40e — `nudge.ts` was still measuring in SKÅDIS
+
+Found while auditing for other hardcoded pitches. `crossSeam` aimed one `PITCH_MM` — a literal
+40 — across a board seam and then rejected any landing further than `PITCH_MM * 1.5` away. On a
+25.4 mm custom board that aims a full 14.6 mm past the correct hole, and the tolerance is scaled
+to the wrong system, so an arrow key across a seam between panels of different pitch would fail
+for no reason the user could see. Both now read `gridOf(board.spec).pitchMm`, and the tolerance
+takes the coarser of the two boards.
+
+This is a Phase 36 defect, not a Phase 37 one — it shipped with custom boards and nothing
+exercised it, because every test wall was SKÅDIS.
+
+### F40f — the peg logic is checked against the composition, not the builder
+
+The builder returns parts in its own frame; the mesh then puts them inside a group at
+`bodyOriginOffset` of the **unrotated** pattern, inside an outer group carrying the placement's
+rotation (`Scene` passes `basePattern`, and `buildAccessoryParts` reads `item.pattern` — the
+same unrotated pattern, which is what makes the two agree). Asserting the builder's local
+coordinates would prove nothing about any of that.
+
+So the test rebuilds that exact composition with real `three` groups and asserts the invariant
+that matters: **every peg mesh's world position coincides with the hole `pegHoles` says it
+claims**, for all four layouts × all four rotations. It holds because the frame shift is applied
+inside the rotated group, so `R(rot)·[dCol·pitch, dRow·pitch]` and `rotatePattern`'s integer
+transform of the same offsets are the same point.
+
+Checked by mutation rather than trusted for passing: zeroing the anchor offset fails 4 tests,
+hardcoding 40 mm in place of the part's pitch fails the mismatch test, and flipping the
+`corners` row direction fails 2. One earlier mutation of `corners` looked survivable and was
+not — it had only flipped one of the two offsets, leaving a peg on the bottom row. The test was
+right; the mutation was incomplete.
+
+## F41 — a mode that is derived, and a memory that is not state (2026-08-28)
+
+Phase 37 put six peg controls in the custom-part dialog for every user, when almost none of them
+want anything but SKÅDIS. Phase 38 puts them behind an explicit two-way choice and makes the
+dialog carry the last dimensions forward. Three decisions, all of which had a more obvious wrong
+version.
+
+### F41a — the mode is derived from the spec, not stored on the part
+
+The obvious version adds `pegMode: 'skadis' | 'custom'` to `CustomPart`. That costs a store
+`version: 14`, a `migrateConfig` step, a `clampCustomPart` branch and a share-link question, and
+it buys a field that can **disagree with the thing it describes**: a part flagged `'skadis'`
+whose `pegs` are not, or the reverse, after any hand-edited blob or future migration.
+
+`isSkadisPegs()` compares the spec to `SKADIS_PEGS` field for field instead. Equal values mean
+equal behaviour, so the two states the flag would have distinguished are not distinguishable —
+a part self-defined to exactly 40 / 5 / 15 / 10 reopens collapsed, and nothing about it is
+wrong. Same argument as the `BoardItem.grid`-absent-means-SKÅDIS convention: the default is
+recognised, not recorded.
+
+### F41b — choosing SKÅDIS resets; hiding is not the same as reverting
+
+The first sketch just wrapped the six fields in `pegMode === 'custom'`. That leaves a part whose
+label says SKÅDIS carrying a 25.4 mm pitch the user can no longer see or reach — and, because
+`pitchMm` sizes the body (F40b), one that is drawn 1.57× too small with no visible cause. It is
+exactly the F37b failure: an override outliving the thing that was supposed to reset it.
+
+So `chooseMode('skadis')` writes `{ ...SKADIS_PEGS }` into the draft. The abandoned spec is kept
+in a `useRef` for the length of the dialog, so a mis-click is undone by pressing self-defined
+again rather than by retyping. The ref is not remembered past close: once saved, the part is its
+spec.
+
+### F41c — a form's memory is not application state
+
+"Keep the same dimensions for the session" could have been a store field. It should not be: it
+is a fact about the *form*, not about the user's wall — nothing renders from it, nothing undoes
+it, and persisting it would mean a reload silently pre-filling numbers with no visible origin.
+`state/partDefaults.ts` is a plain module ref on the `drag.ts` principle ("deliberately separate
+from the persisted config store"), and it is not even a zustand store, because nothing
+subscribes: the dialog reads it once at mount and writes it once at save.
+
+What it carries: `cols`, `rows`, `depthMm`, the whole `PegSpec`, the mode, and the mm/inch
+selector. What it deliberately does not:
+
+- **the name** — pre-filling it invites two parts called the same thing, and a name is the one
+  field the user must think about per part;
+- **the lattice** — a property of where a part hangs, not of how big it is, and carrying it
+  would silently pin every subsequent part to B.
+
+It is remembered on **both** save branches, add and edit. The alternative — remember only on add
+— means editing a part to fix its pitch and then adding a sibling gives you the *pre-fix* pitch,
+which is the opposite of what the fix said.
+
+One consequence worth naming: module state outlives a test case, and `resetStore` in
+`App.test.tsx` does not touch it. `resetPartDefaults()` exists for that, and is called first in
+the reset — without it the second custom-part test in the file inherits the first one's draft
+and passes or fails on test order. The doc comment at the top of `CustomPartForm` that claimed
+"editing one part then creating another cannot inherit the previous values" was Phase 37's
+invariant and is now false; it was rewritten rather than left to mislead.
+
+### F41d — the warning is what sends the user to the other side
+
+`pegFitWarnings` still runs, and still renders, while the dialog is on the SKÅDIS side. That
+looked like a candidate for gating — the user has not chosen to care about pegs — but it is
+backwards: a SKÅDIS part on a wall of 25.4 mm panels is precisely the case where the six fields
+are needed, and the warning is the only thing that says so. Gating it would hide the prompt
+behind the button it is prompting you to press.
+
+## F42 — A turned SKÅDIS panel is not a thing you can hang anything on (2026-08-28)
+
+**Reported by a commenter**, and correct: the 36×56 board's slots are vertical, so hanging
+the panel sideways lays every slot down. A SKÅDIS accessory hooks by dropping a tab into an
+upright slot and letting gravity retain it behind the panel; a horizontal slot gives the tab
+nothing to drop into. The same applies to all three wall boards — they share one slot field.
+
+**What the app currently does, and why it is wrong.** `BoardItem.rotatable` is `true` for the
+three wall boards and `false` only for the free-standing one. F24 established that turning a
+panel exchanges the lattice origins rather than moving a slot, which is correct geometry and
+stays correct — but it says nothing about whether an accessory can *engage* those slots.
+The build modelled the panel and forgot the tab. `help.n4` ("plan a rotated wall with that in
+mind") is the shape of the mistake in one sentence: a warning where there should be a refusal.
+
+This is the F35 class of error again — a model that is internally consistent, passes its own
+tests, and describes something that does not exist. F24's maths needed no correction; its
+*scope* did.
+
+**What survives.** Every rotation mechanism stays, because a user-defined pegboard still
+uses it: `generateHoles`' origin exchange, `boardSpec`'s dimension swap, `holePath`'s
+quarter-turn, the print sheet's `horizontal`, and the `ROTATED` flag in share-link v4. Only
+the catalog's four `rotatable: true` flags are wrong.
+
+**What a custom board does about it.** A custom board keeps `rotatable: true`. Two reasons.
+Its geometry is the user's statement, not ours — a `round` or `square` hole field rotates
+perfectly well, and a board of 1-inch hardboard has no orientation to be wrong about. And
+rotation is *not* redundant with defining the board cols/rows swapped: on a `staggered`
+board the swapped definition gives the same hole positions with the ORIGINAL lattice tagging,
+where the turn gives them exchanged tagging (F24). The one case that inherits the SKÅDIS
+problem is a custom `slot-v` board turned sideways, and that is what the rewritten Help note
+has to say instead of what it says now.
+
+**The alternative that was considered and rejected**: keep the turn and forbid *placement* on
+a turned board. It is arguably the more truthful model — you can absolutely hang a SKÅDIS
+panel sideways, you just cannot hang anything on it — but it buys a board state whose only
+behaviour is refusing every drop, and a second reason for a rejected drop that is not
+overlap. Disallowing the turn says the same thing with one flag.
+
+**Consequence for saved walls, stated honestly.** `boardSpec` already refuses to trust a
+stored orientation over the catalog ("a saved wall, or a share link, can name a board that
+has since stopped being rotatable" — the guard was written for exactly this), so a rotated
+36×56 reopens as an upright 36×56 with no migration at all. But the hole field of a 360×560
+panel is not the hole field of a 560×360 one, so **every placement on a turned board becomes
+unresolvable and is pruned.** That loss is unavoidable and correct: those placements describe
+a wall that cannot be built. It is worth making it explicit in a migration step rather than
+letting it happen as a side effect of a read-time guard.
+
+## F43 — A site key is an origin, and a Pages project is not one (2026-09-06)
+
+The scheduled badge run got past the credentials (F38) and then stopped one step later:
+
+```
+COUNTER_DEV_SITE="mofane-work.github.io/pegboard/" is not one of: mofane-work.github.io
+```
+
+That is the script's "named site does not exist" guard firing correctly on a value that is
+nonetheless the right answer to the question it was asked. **counter.dev buckets by the
+Origin header** (`Origin2SiteId` in `track.go`, F27f), and an origin is a scheme and a host
+— it has no path. A GitHub Pages *project* site is served from `<user>.github.io/<repo>/`,
+so the address in the browser bar, in the README, and in `deploy-pages.yml`'s `BASE_PATH`
+all carry the path — and the one place the path is meaningless is the variable naming the
+counter bucket. There is no site key for the project. Its visits land in the user site's
+bucket, shared with anything else on that domain, which is exactly what the account showed.
+
+**Fixed by resolving rather than rejecting.** `resolveSite` tries the value verbatim first,
+then strips scheme, userinfo, path, query, fragment and port and matches the remaining host
+case-insensitively. `mofane-work.github.io/pegboard/`, the full `https://…` URL and the bare
+host now all resolve to the one key, and the run logs the reduction it made. A value that
+still matches nothing keeps the old behaviour — a loud message and exit 0, never a confident
+`0` committed over a real count — with the origin rule spelled out in it, since the message
+is the only place a maintainer meets this.
+
+Worth stating why this is not "just set the variable correctly". The correct value is
+*counter-intuitive*: it names a domain the maintainer never deployed to and does not think
+of as this project. Whoever sets it next will reach for the URL of the site they are
+counting, because that is the only address the project has. Normalising is cheaper than
+being right about that once a year — and this account tracks a single site, so omitting the
+variable entirely is equally valid and sums to the same number.
+
+**The schedule dropped from daily to weekly at the same time.** Cron is now
+`0 4 * * 1` — Monday 04:00 UTC, still the hour before `refresh-prices.yml` so the two never
+race for the same push. A visit total is cumulative and a badge is not time-sensitive; a
+daily commit to the default branch for a number nobody watches is noise, and each one is a
+push that `deploy-pages.yml` has to be told to ignore (F31). Weekly puts the badge on the
+same cadence as the prices it sits next to.
